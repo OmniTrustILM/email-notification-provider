@@ -2,28 +2,29 @@ package com.czertainly.np.email.util;
 
 import com.czertainly.api.model.common.HealthDto;
 import com.czertainly.api.model.common.HealthStatus;
+import com.czertainly.api.model.common.events.data.CertificateActionPerformedEventData;
+import com.czertainly.api.model.common.events.data.CertificateStatusChangedEventData;
 import com.czertainly.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.czertainly.api.model.connector.notification.NotificationRecipientDto;
-import com.czertainly.api.model.connector.notification.NotificationType;
-import com.czertainly.api.model.connector.notification.data.NotificationDataCertificateActionPerformed;
-import com.czertainly.api.model.connector.notification.data.NotificationDataCertificateStatusChanged;
 import com.czertainly.api.model.core.auth.Resource;
+import com.czertainly.api.model.core.other.ResourceEvent;
 import com.czertainly.np.email.service.HealthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
+import java.util.UUID;
 
 @SpringBootTest
 public class BaseSpringBootTest {
 
-    @MockBean
+    @MockitoBean
     private HealthService healthService;
 
-    @MockBean
+    @MockitoBean
     private JavaMailSender javaMailSender;
 
     protected static final String SUBJECT_DN = "CN=Test Certificate";
@@ -47,16 +48,16 @@ public class BaseSpringBootTest {
         recipient.setEmail("test@czertainly.com");
         recipient.setName("Test User");
 
-        NotificationDataCertificateStatusChanged notificationData = new NotificationDataCertificateStatusChanged();
+        CertificateStatusChangedEventData notificationData = new CertificateStatusChangedEventData();
         notificationData.setSubjectDn(SUBJECT_DN);
         notificationData.setSerialNumber(SERIAL_NUMBER);
         notificationData.setIssuerDn(ISSUER_DN);
-        notificationData.setCertificateUuid(CERTIFICATE_UUID);
+        notificationData.setCertificateUuid(UUID.fromString(CERTIFICATE_UUID));
         notificationData.setFingerprint(FINGERPRINT);
         notificationData.setNewStatus(NEW_STATUS);
 
         NotificationProviderNotifyRequestDto request = new NotificationProviderNotifyRequestDto();
-        request.setEventType(NotificationType.CERTIFICATE_STATUS_CHANGED);
+        request.setEvent(ResourceEvent.CERTIFICATE_STATUS_CHANGED);
         request.setResource(Resource.CERTIFICATE);
         request.setRecipients(List.of(recipient));
         request.setNotificationData(notificationData);
@@ -69,16 +70,16 @@ public class BaseSpringBootTest {
         recipient.setEmail("test@czertainly.com");
         recipient.setName("Test User");
 
-        NotificationDataCertificateActionPerformed notificationData = new NotificationDataCertificateActionPerformed();
+        CertificateActionPerformedEventData notificationData = new CertificateActionPerformedEventData();
         notificationData.setSubjectDn(SUBJECT_DN);
         notificationData.setSerialNumber(SERIAL_NUMBER);
         notificationData.setIssuerDn(ISSUER_DN);
-        notificationData.setCertificateUuid(CERTIFICATE_UUID);
+        notificationData.setCertificateUuid(UUID.fromString(CERTIFICATE_UUID));
         notificationData.setFingerprint(FINGERPRINT);
         notificationData.setErrorMessage(ERROR_MESSAGE);
 
         NotificationProviderNotifyRequestDto request = new NotificationProviderNotifyRequestDto();
-        request.setEventType(NotificationType.CERTIFICATE_ACTION_PERFORMED);
+        request.setEvent(ResourceEvent.CERTIFICATE_ACTION_PERFORMED);
         request.setResource(Resource.CERTIFICATE);
         request.setRecipients(List.of(recipient));
         request.setNotificationData(notificationData);
