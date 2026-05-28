@@ -6,6 +6,7 @@ import com.czertainly.api.exception.ValidationError;
 import com.czertainly.api.exception.ValidationException;
 import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
+import com.czertainly.api.model.common.attribute.v3.content.StringAttributeContentV3;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceRequestDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderNotifyRequestDto;
@@ -177,9 +178,10 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
             if (!StringUtils.isBlank(recipient.getEmail())) {
                 to.add(recipient.getEmail());
                 emailProvided = true;
-            } else if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
+            }
+            if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
                 String email = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContent.class).getData();
+                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class).getData();
                 if (!StringUtils.isBlank(email)) {
                     to.add(email);
                     emailProvided = true;
