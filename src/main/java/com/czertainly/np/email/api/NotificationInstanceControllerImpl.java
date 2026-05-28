@@ -74,7 +74,6 @@ public class NotificationInstanceControllerImpl implements NotificationInstanceC
 
     @Override
     public List<DataAttribute> listMappingAttributes(String kind) {
-        // return empty list as we do not need any custom attributes
-        return List.of();
+        return attributeService.listMappingAttributes(kind);
     }
 }

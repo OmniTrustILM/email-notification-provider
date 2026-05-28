@@ -33,6 +33,11 @@ public class AttributeServiceImpl implements AttributeService {
     public static final String DATA_SENDER_EMAIL_ADDRESS_DESCRIPTION = "Email address from which the email will be sent";
     public static final String DATA_SENDER_EMAIL_ADDRESS_LABEL = "Sender email address";
 
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_UUID = "522f2a57-4db2-408e-b7ed-7aee4bd96282";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_NAME = "data_recipientEmailAddress";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_DESCRIPTION = "Email address to which the email will be sent";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_LABEL = "Recipient email address";
+
     public static final String DATA_SUBJECT_UUID = "cc56a091-3e99-446b-b366-1820afa75c97";
     public static final String DATA_SUBJECT_NAME = "data_emailSubject";
     public static final String DATA_SUBJECT_DESCRIPTION = "Email subject to be sent";
@@ -74,6 +79,50 @@ public class AttributeServiceImpl implements AttributeService {
         return true;
     }
 
+    @Override
+    public List<DataAttribute> listMappingAttributes(String kind) {
+        if (!kind.equals("EMAIL")) {
+            throw new ValidationException(ValidationError.create("Unsupported kind {}", kind));
+        }
+        return List.of(dataRecipientEmailAddress());
+    }
+
+    private DataAttribute dataRecipientEmailAddress() {
+        DataAttribute attribute = new DataAttribute();
+
+        attribute.setUuid(DATA_RECIPIENT_EMAIL_ADDRESS_UUID);
+        attribute.setName(DATA_RECIPIENT_EMAIL_ADDRESS_NAME);
+        attribute.setDescription(DATA_RECIPIENT_EMAIL_ADDRESS_DESCRIPTION);
+        attribute.setContentType(AttributeContentType.STRING);
+        attribute.setType(AttributeType.DATA);
+
+        DataAttributeProperties attributeProperties = new DataAttributeProperties();
+        attributeProperties.setLabel(DATA_RECIPIENT_EMAIL_ADDRESS_LABEL);
+        attributeProperties.setRequired(false);
+        attributeProperties.setReadOnly(false);
+        attributeProperties.setVisible(true);
+        attributeProperties.setList(false);
+        attributeProperties.setMultiSelect(false);
+
+        attribute.setProperties(attributeProperties);
+
+        // create restrictions
+        RegexpAttributeConstraint regexpAttributeConstraint = getRegexpAttributeConstraint();
+        attribute.setConstraints(List.of(regexpAttributeConstraint));
+
+        return attribute;
+    }
+
+    private static RegexpAttributeConstraint getRegexpAttributeConstraint() {
+        RegexpAttributeConstraint regexpAttributeConstraint = new RegexpAttributeConstraint();
+        regexpAttributeConstraint.setDescription("Email address");
+        regexpAttributeConstraint.setErrorMessage("Invalid email address format");
+        // this is according to the W3C HTML5 specification:
+        // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+        regexpAttributeConstraint.setData("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+        return regexpAttributeConstraint;
+    }
+
     private DataAttribute dataSenderEmailAddress() {
         DataAttribute attribute = new DataAttribute();
 
@@ -99,12 +148,7 @@ public class AttributeServiceImpl implements AttributeService {
         attribute.setContent(content);
 
         // create restrictions
-        RegexpAttributeConstraint regexpAttributeConstraint = new RegexpAttributeConstraint();
-        regexpAttributeConstraint.setDescription("Email address");
-        regexpAttributeConstraint.setErrorMessage("Invalid email address format");
-        // this is according to the W3C HTML5 specification:
-        // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
-        regexpAttributeConstraint.setData("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+        RegexpAttributeConstraint regexpAttributeConstraint = getRegexpAttributeConstraint();
         attribute.setConstraints(List.of(regexpAttributeConstraint));
 
         return attribute;

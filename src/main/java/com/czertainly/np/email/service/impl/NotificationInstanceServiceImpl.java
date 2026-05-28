@@ -173,11 +173,21 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
         List<String> to = new ArrayList<>();
         for (NotificationRecipientDto recipient : recipients) {
-            if (StringUtils.isBlank(recipient.getEmail())) {
+            boolean emailProvided = false;
+            if (!StringUtils.isBlank(recipient.getEmail())) {
+                to.add(recipient.getEmail());
+                emailProvided = true;
+            } else if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
+                String email = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
+                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContent.class).getData();
+                if (!StringUtils.isBlank(email)) {
+                    to.add(email);
+                    emailProvided = true;
+                }
+            }
+            if (!emailProvided) {
                 logger.debug("No email address is provided for recipient: {}", recipient);
                 throw new ValidationException(List.of(new ValidationError("email", "Email is required")));
-            } else {
-                to.add(recipient.getEmail());
             }
         }
         return to.toArray(new String[0]);
