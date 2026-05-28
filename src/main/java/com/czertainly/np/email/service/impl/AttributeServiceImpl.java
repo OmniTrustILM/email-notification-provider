@@ -144,7 +144,7 @@ public class AttributeServiceImpl implements AttributeService {
 
         attribute.setProperties(attributeProperties);
 
-        List<BaseAttributeContentV2<?>> content = new ArrayList<>();
+        List<StringAttributeContentV2> content = new ArrayList<>();
         StringAttributeContentV2 attributeContent = new StringAttributeContentV2("email@example.com");
         content.add(attributeContent);
         attribute.setContent(content);
@@ -156,7 +156,7 @@ public class AttributeServiceImpl implements AttributeService {
         return attribute;
     }
 
-    private DataAttributeV2 dataSubject() {
+    private DataAttribute dataSubject() {
         DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_SUBJECT_UUID);
@@ -175,7 +175,7 @@ public class AttributeServiceImpl implements AttributeService {
 
         attribute.setProperties(attributeProperties);
 
-        List<BaseAttributeContentV2<?>> content = new ArrayList<>();
+        List<StringAttributeContentV2> content = new ArrayList<>();
         StringAttributeContentV2 attributeContent = new StringAttributeContentV2("Email subject");
         content.add(attributeContent);
         attribute.setContent(content);
@@ -183,7 +183,7 @@ public class AttributeServiceImpl implements AttributeService {
         return attribute;
     }
 
-    private DataAttributeV2 dataContentTemplate() {
+    private DataAttribute dataContentTemplate() {
         DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_CONTENT_TEMPLATE_UUID);
@@ -202,7 +202,7 @@ public class AttributeServiceImpl implements AttributeService {
 
         attribute.setProperties(attributeProperties);
 
-        List<BaseAttributeContentV2<?>> content = new ArrayList<>();
+        List<CodeBlockAttributeContentV2> content = new ArrayList<>();
         CodeBlockAttributeContentV2 attributeContent = new CodeBlockAttributeContentV2();
         CodeBlockAttributeContentData data = new CodeBlockAttributeContentData();
         data.setLanguage(ProgrammingLanguageEnum.HTML);
