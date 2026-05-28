@@ -2,18 +2,18 @@ package com.czertainly.np.email.service.impl;
 
 import com.czertainly.api.exception.ValidationError;
 import com.czertainly.api.exception.ValidationException;
-import com.czertainly.api.model.client.attribute.RequestAttributeDto;
-import com.czertainly.api.model.common.attribute.v2.AttributeType;
-import com.czertainly.api.model.common.attribute.v2.BaseAttribute;
-import com.czertainly.api.model.common.attribute.v2.DataAttribute;
-import com.czertainly.api.model.common.attribute.v2.constraint.RegexpAttributeConstraint;
-import com.czertainly.api.model.common.attribute.v2.content.AttributeContentType;
-import com.czertainly.api.model.common.attribute.v2.content.BaseAttributeContent;
-import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContent;
-import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContent;
-import com.czertainly.api.model.common.attribute.v2.content.data.CodeBlockAttributeContentData;
-import com.czertainly.api.model.common.attribute.v2.content.data.ProgrammingLanguageEnum;
-import com.czertainly.api.model.common.attribute.v2.properties.DataAttributeProperties;
+import com.czertainly.api.model.client.attribute.RequestAttribute;
+import com.czertainly.api.model.common.attribute.common.AttributeType;
+import com.czertainly.api.model.common.attribute.common.BaseAttribute;
+import com.czertainly.api.model.common.attribute.common.DataAttribute;
+import com.czertainly.api.model.common.attribute.common.constraint.RegexpAttributeConstraint;
+import com.czertainly.api.model.common.attribute.common.content.AttributeContentType;
+import com.czertainly.api.model.common.attribute.common.content.data.CodeBlockAttributeContentData;
+import com.czertainly.api.model.common.attribute.common.content.data.ProgrammingLanguageEnum;
+import com.czertainly.api.model.common.attribute.common.properties.DataAttributeProperties;
+import com.czertainly.api.model.common.attribute.v2.DataAttributeV2;
+import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
+import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.czertainly.core.util.AttributeDefinitionUtils;
 import com.czertainly.np.email.service.AttributeService;
 import org.slf4j.Logger;
@@ -60,7 +60,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
-    public boolean validateAttributes(String kind, List<RequestAttributeDto> attributes) {
+    public boolean validateAttributes(String kind, List<RequestAttribute> attributes) {
         logger.debug("Validating the attributes for kind {} with attributes: {}", kind, attributes);
 
         if (!kind.equals("EMAIL")) {
@@ -75,7 +75,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     private DataAttribute dataSenderEmailAddress() {
-        DataAttribute attribute = new DataAttribute();
+        DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_SENDER_EMAIL_ADDRESS_UUID);
         attribute.setName(DATA_SENDER_EMAIL_ADDRESS_NAME);
@@ -93,8 +93,8 @@ public class AttributeServiceImpl implements AttributeService {
 
         attribute.setProperties(attributeProperties);
 
-        List<BaseAttributeContent> content = new ArrayList<>();
-        StringAttributeContent attributeContent = new StringAttributeContent("email@example.com");
+        List<StringAttributeContentV2> content = new ArrayList<>();
+        StringAttributeContentV2 attributeContent = new StringAttributeContentV2("email@example.com");
         content.add(attributeContent);
         attribute.setContent(content);
 
@@ -111,7 +111,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     private DataAttribute dataSubject() {
-        DataAttribute attribute = new DataAttribute();
+        DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_SUBJECT_UUID);
         attribute.setName(DATA_SUBJECT_NAME);
@@ -129,8 +129,8 @@ public class AttributeServiceImpl implements AttributeService {
 
         attribute.setProperties(attributeProperties);
 
-        List<BaseAttributeContent> content = new ArrayList<>();
-        StringAttributeContent attributeContent = new StringAttributeContent("Email subject");
+        List<StringAttributeContentV2> content = new ArrayList<>();
+        StringAttributeContentV2 attributeContent = new StringAttributeContentV2("Email subject");
         content.add(attributeContent);
         attribute.setContent(content);
 
@@ -138,7 +138,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     private DataAttribute dataContentTemplate() {
-        DataAttribute attribute = new DataAttribute();
+        DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_CONTENT_TEMPLATE_UUID);
         attribute.setName(DATA_CONTENT_TEMPLATE_NAME);
@@ -156,8 +156,8 @@ public class AttributeServiceImpl implements AttributeService {
 
         attribute.setProperties(attributeProperties);
 
-        List<BaseAttributeContent> content = new ArrayList<>();
-        CodeBlockAttributeContent attributeContent = new CodeBlockAttributeContent();
+        List<CodeBlockAttributeContentV2> content = new ArrayList<>();
+        CodeBlockAttributeContentV2 attributeContent = new CodeBlockAttributeContentV2();
         CodeBlockAttributeContentData data = new CodeBlockAttributeContentData();
         data.setLanguage(ProgrammingLanguageEnum.HTML);
         attributeContent.setData(data);
