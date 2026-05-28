@@ -4,8 +4,8 @@ import com.czertainly.api.exception.AlreadyExistException;
 import com.czertainly.api.exception.NotFoundException;
 import com.czertainly.api.exception.ValidationError;
 import com.czertainly.api.exception.ValidationException;
-import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContent;
-import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContent;
+import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
+import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceRequestDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderNotifyRequestDto;
@@ -19,7 +19,7 @@ import com.czertainly.np.email.service.NotificationInstanceService;
 import com.czertainly.np.email.util.TemplateUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,13 +77,13 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
 
         final String emailFrom = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String contentTemplate = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContent.class).getData().getCode();
+                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContentV2.class).getData().getCode();
 
         NotificationInstance notificationInstance = new NotificationInstance();
         notificationInstance.setUuid(UUID.randomUUID().toString());
@@ -112,13 +112,13 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
 
         final String emailFrom = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String contentTemplate = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContent.class).getData().getCode();
+                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContentV2.class).getData().getCode();
 
         notificationInstance.setAttributes(AttributeDefinitionUtils.mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
         notificationInstance.setEmailFrom(emailFrom);
