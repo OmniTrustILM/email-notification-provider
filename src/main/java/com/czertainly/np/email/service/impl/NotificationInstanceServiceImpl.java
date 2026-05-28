@@ -4,8 +4,8 @@ import com.czertainly.api.exception.AlreadyExistException;
 import com.czertainly.api.exception.NotFoundException;
 import com.czertainly.api.exception.ValidationError;
 import com.czertainly.api.exception.ValidationException;
-import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContent;
-import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContent;
+import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
+import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceRequestDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderNotifyRequestDto;
@@ -77,13 +77,13 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
 
         final String emailFrom = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String contentTemplate = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContent.class).getData().getCode();
+                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContentV2.class).getData().getCode();
 
         NotificationInstance notificationInstance = new NotificationInstance();
         notificationInstance.setUuid(UUID.randomUUID().toString());
@@ -112,13 +112,13 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
 
         final String emailFrom = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContent.class).getData();
+                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
         final String contentTemplate = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContent.class).getData().getCode();
+                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContentV2.class).getData().getCode();
 
         notificationInstance.setAttributes(AttributeDefinitionUtils.mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
         notificationInstance.setEmailFrom(emailFrom);
@@ -140,7 +140,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
     @Override
     public void sendNotification(UUID uuid, NotificationProviderNotifyRequestDto request) throws NotFoundException {
-        logger.info("Received request to send email: eventType={}, resource={}", request.getEventType(), request.getResource());
+        logger.info("Received request to send email: event={}, resource={}", request.getEvent(), request.getResource());
         NotificationInstance notificationInstance = notificationInstanceRepository
                 .findByUuid(uuid)
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
