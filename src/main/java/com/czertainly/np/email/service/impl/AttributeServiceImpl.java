@@ -3,22 +3,19 @@ package com.czertainly.np.email.service.impl;
 import com.czertainly.api.exception.ValidationError;
 import com.czertainly.api.exception.ValidationException;
 import com.czertainly.api.model.client.attribute.RequestAttribute;
-import com.czertainly.api.model.client.attribute.RequestAttributeDto;
 import com.czertainly.api.model.common.attribute.common.AttributeType;
 import com.czertainly.api.model.common.attribute.common.BaseAttribute;
+import com.czertainly.api.model.common.attribute.common.DataAttribute;
 import com.czertainly.api.model.common.attribute.common.constraint.RegexpAttributeConstraint;
 import com.czertainly.api.model.common.attribute.common.content.AttributeContentType;
 import com.czertainly.api.model.common.attribute.common.content.data.CodeBlockAttributeContentData;
 import com.czertainly.api.model.common.attribute.common.content.data.ProgrammingLanguageEnum;
 import com.czertainly.api.model.common.attribute.common.properties.DataAttributeProperties;
-import com.czertainly.api.model.common.attribute.v1.content.BaseAttributeContent;
 import com.czertainly.api.model.common.attribute.v2.DataAttributeV2;
 import com.czertainly.api.model.common.attribute.v2.content.BaseAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v3.DataAttributeV3;
-import com.czertainly.api.model.common.attribute.v3.content.BaseAttributeContentV3;
-import com.czertainly.api.model.common.attribute.v3.content.StringAttributeContentV3;
 import com.czertainly.core.util.AttributeDefinitionUtils;
 import com.czertainly.np.email.service.AttributeService;
 import org.slf4j.Logger;
@@ -84,8 +81,6 @@ public class AttributeServiceImpl implements AttributeService {
         return true;
     }
 
-    private DataAttributeV2 dataSenderEmailAddress() {
-        DataAttributeV2 attribute = new DataAttributeV2();
     @Override
     public List<DataAttribute> listMappingAttributes(String kind) {
         if (!kind.equals("EMAIL")) {
@@ -95,7 +90,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     private DataAttribute dataRecipientEmailAddress() {
-        DataAttribute attribute = new DataAttribute();
+        DataAttributeV3 attribute = new DataAttributeV3();
 
         attribute.setUuid(DATA_RECIPIENT_EMAIL_ADDRESS_UUID);
         attribute.setName(DATA_RECIPIENT_EMAIL_ADDRESS_NAME);
@@ -131,7 +126,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     private DataAttribute dataSenderEmailAddress() {
-        DataAttribute attribute = new DataAttribute();
+        DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_SENDER_EMAIL_ADDRESS_UUID);
         attribute.setName(DATA_SENDER_EMAIL_ADDRESS_NAME);
