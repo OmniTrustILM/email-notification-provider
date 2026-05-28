@@ -184,7 +184,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     private DataAttributeV2 dataContentTemplate() {
-        DataAttributeV2 attribute = new DataAttributeV2 ();
+        DataAttributeV2 attribute = new DataAttributeV2();
 
         attribute.setUuid(DATA_CONTENT_TEMPLATE_UUID);
         attribute.setName(DATA_CONTENT_TEMPLATE_NAME);

@@ -29,6 +29,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -172,7 +173,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
-        List<String> to = new ArrayList<>();
+        HashSet<String> to = new HashSet<>();
         for (NotificationRecipientDto recipient : recipients) {
             boolean emailProvided = false;
             if (!StringUtils.isBlank(recipient.getEmail())) {
@@ -180,11 +181,14 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                 emailProvided = true;
             }
             if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
-                String email = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class).getData();
-                if (!StringUtils.isBlank(email)) {
-                    to.add(email);
-                    emailProvided = true;
+                StringAttributeContentV3 attributeContent = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
+                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
+                if (attributeContent != null) {
+                    String email = attributeContent.getData();
+                    if (!StringUtils.isBlank(email)) {
+                        to.add(email);
+                        emailProvided = true;
+                    }
                 }
             }
             if (!emailProvided) {
