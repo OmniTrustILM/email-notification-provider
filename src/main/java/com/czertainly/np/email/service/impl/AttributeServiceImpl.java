@@ -29,6 +29,9 @@ public class AttributeServiceImpl implements AttributeService {
 
     private static final Logger logger = LoggerFactory.getLogger(AttributeServiceImpl.class);
 
+    private static final String KIND_EMAIL = "EMAIL";
+    private static final String UNSUPPORTED_KIND_MESSAGE = "Unsupported kind {}";
+
     public static final String DATA_SENDER_EMAIL_ADDRESS_UUID = "3a1aed46-7e45-4e13-b4c0-5d33e5dc73f8";
     public static final String DATA_SENDER_EMAIL_ADDRESS_NAME = "data_senderEmailAddress";
     public static final String DATA_SENDER_EMAIL_ADDRESS_DESCRIPTION = "Email address from which the email will be sent";
@@ -53,8 +56,8 @@ public class AttributeServiceImpl implements AttributeService {
     public List<BaseAttribute> getAttributes(String kind) {
         logger.debug("Getting the attributes for {}", kind);
 
-        if (!kind.equals("EMAIL")) {
-            throw new ValidationException(ValidationError.create("Unsupported kind {}", kind));
+        if (!KIND_EMAIL.equals(kind)) {
+            throw new ValidationException(ValidationError.create(UNSUPPORTED_KIND_MESSAGE, kind));
         }
 
         List<BaseAttribute> attributes = new ArrayList<>();
@@ -69,8 +72,8 @@ public class AttributeServiceImpl implements AttributeService {
     public boolean validateAttributes(String kind, List<RequestAttribute> attributes) {
         logger.debug("Validating the attributes for kind {} with attributes: {}", kind, attributes);
 
-        if (!kind.equals("EMAIL")) {
-            throw new ValidationException(ValidationError.create("Unsupported kind {}", kind));
+        if (!KIND_EMAIL.equals(kind)) {
+            throw new ValidationException(ValidationError.create(UNSUPPORTED_KIND_MESSAGE, kind));
         }
         if (attributes == null) {
             return false;
@@ -82,8 +85,8 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     public List<DataAttribute> listMappingAttributes(String kind) {
-        if (!kind.equals("EMAIL")) {
-            throw new ValidationException(ValidationError.create("Unsupported kind {}", kind));
+        if (!KIND_EMAIL.equals(kind)) {
+            throw new ValidationException(ValidationError.create(UNSUPPORTED_KIND_MESSAGE, kind));
         }
         return List.of(dataRecipientEmailAddress());
     }

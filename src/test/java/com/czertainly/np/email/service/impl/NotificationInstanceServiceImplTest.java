@@ -293,9 +293,10 @@ class NotificationInstanceServiceImplTest {
 
         NotificationRecipientDto recipient = new NotificationRecipientDto();
         recipient.setName("R1");
+        NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(List.of(recipient));
 
         assertThrows(ValidationException.class,
-                () -> service.sendNotification(uuid, buildNotifyRequest(List.of(recipient))));
+                () -> service.sendNotification(uuid, notifyRequest));
         verify(emailSender, never()).send(any(MimeMessage.class));
     }
 
@@ -310,9 +311,10 @@ class NotificationInstanceServiceImplTest {
         recipient.setName("R1");
         recipient.setEmail("   ");
         recipient.setMappedAttributes(List.of(buildRecipientEmailAttribute("")));
+        NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(List.of(recipient));
 
         assertThrows(ValidationException.class,
-                () -> service.sendNotification(uuid, buildNotifyRequest(List.of(recipient))));
+                () -> service.sendNotification(uuid, notifyRequest));
         verify(emailSender, never()).send(any(MimeMessage.class));
     }
 

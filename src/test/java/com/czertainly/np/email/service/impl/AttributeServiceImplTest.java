@@ -90,15 +90,18 @@ class AttributeServiceImplTest {
 
     @Test
     void validateAttributes_throwsForUnsupportedKind() {
+        List<RequestAttribute> empty = List.of();
+
         assertThrows(ValidationException.class,
-                () -> attributeService.validateAttributes(UNSUPPORTED_KIND, List.of()));
+                () -> attributeService.validateAttributes(UNSUPPORTED_KIND, empty));
     }
 
     @Test
     void validateAttributes_throwsWhenRequiredAttributeMissing() {
-        // missing sender / subject / content template - all required
+        List<RequestAttribute> empty = List.of();
+
         assertThrows(ValidationException.class,
-                () -> attributeService.validateAttributes(EMAIL_KIND, List.of()));
+                () -> attributeService.validateAttributes(EMAIL_KIND, empty));
     }
 
     @Test
