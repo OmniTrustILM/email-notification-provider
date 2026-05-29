@@ -121,8 +121,8 @@ class AttributeServiceImplTest {
         assertFalse(recipient.getProperties().isRequired());
         assertFalse(recipient.getProperties().isReadOnly());
         assertTrue(recipient.getProperties().isVisible());
-        assertFalse(recipient.getProperties().isList());
-        assertFalse(recipient.getProperties().isMultiSelect());
+        assertTrue(recipient.getProperties().isList());
+        assertTrue(recipient.getProperties().isMultiSelect());
 
         assertEquals(1, recipient.getConstraints().size());
         BaseAttributeConstraint<?> constraint = recipient.getConstraints().get(0);

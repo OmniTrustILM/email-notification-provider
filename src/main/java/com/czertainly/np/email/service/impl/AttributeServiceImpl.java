@@ -115,8 +115,8 @@ public class AttributeServiceImpl implements AttributeService {
         attributeProperties.setRequired(false);
         attributeProperties.setReadOnly(false);
         attributeProperties.setVisible(true);
-        attributeProperties.setList(false);
-        attributeProperties.setMultiSelect(false);
+        attributeProperties.setList(true);
+        attributeProperties.setMultiSelect(true);
 
         attribute.setProperties(attributeProperties);
 
