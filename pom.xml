@@ -21,9 +21,9 @@
         <tomcat.version>10.1.55</tomcat.version>
         
         <java.version>21</java.version>
-        <sonar.organization>czertainly</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.projectKey>CZERTAINLY_CZERTAINLY-Email-Notification-Provider</sonar.projectKey>
+        <sonar.organization>ilm</sonar.organization>
+        <sonar.projectKey>ilm_email-notification-provider</sonar.projectKey>
     </properties>
 
     <dependencies>

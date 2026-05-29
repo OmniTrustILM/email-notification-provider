@@ -14,6 +14,7 @@ import com.czertainly.api.model.common.attribute.common.properties.DataAttribute
 import com.czertainly.api.model.common.attribute.v2.DataAttributeV2;
 import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
+import com.czertainly.api.model.common.attribute.v3.DataAttributeV3;
 import com.czertainly.core.util.AttributeDefinitionUtils;
 import com.czertainly.np.email.service.AttributeService;
 import org.slf4j.Logger;
@@ -28,10 +29,18 @@ public class AttributeServiceImpl implements AttributeService {
 
     private static final Logger logger = LoggerFactory.getLogger(AttributeServiceImpl.class);
 
+    private static final String KIND_EMAIL = "EMAIL";
+    private static final String UNSUPPORTED_KIND_MESSAGE = "Unsupported kind {}";
+
     public static final String DATA_SENDER_EMAIL_ADDRESS_UUID = "3a1aed46-7e45-4e13-b4c0-5d33e5dc73f8";
     public static final String DATA_SENDER_EMAIL_ADDRESS_NAME = "data_senderEmailAddress";
     public static final String DATA_SENDER_EMAIL_ADDRESS_DESCRIPTION = "Email address from which the email will be sent";
     public static final String DATA_SENDER_EMAIL_ADDRESS_LABEL = "Sender email address";
+
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_UUID = "522f2a57-4db2-408e-b7ed-7aee4bd96282";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_NAME = "data_recipientEmailAddress";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_DESCRIPTION = "Email address to which the email will be sent";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_LABEL = "Recipient email address";
 
     public static final String DATA_SUBJECT_UUID = "cc56a091-3e99-446b-b366-1820afa75c97";
     public static final String DATA_SUBJECT_NAME = "data_emailSubject";
@@ -47,8 +56,8 @@ public class AttributeServiceImpl implements AttributeService {
     public List<BaseAttribute> getAttributes(String kind) {
         logger.debug("Getting the attributes for {}", kind);
 
-        if (!kind.equals("EMAIL")) {
-            throw new ValidationException(ValidationError.create("Unsupported kind {}", kind));
+        if (!KIND_EMAIL.equals(kind)) {
+            throw new ValidationException(ValidationError.create(UNSUPPORTED_KIND_MESSAGE, kind));
         }
 
         List<BaseAttribute> attributes = new ArrayList<>();
@@ -63,8 +72,8 @@ public class AttributeServiceImpl implements AttributeService {
     public boolean validateAttributes(String kind, List<RequestAttribute> attributes) {
         logger.debug("Validating the attributes for kind {} with attributes: {}", kind, attributes);
 
-        if (!kind.equals("EMAIL")) {
-            throw new ValidationException(ValidationError.create("Unsupported kind {}", kind));
+        if (!KIND_EMAIL.equals(kind)) {
+            throw new ValidationException(ValidationError.create(UNSUPPORTED_KIND_MESSAGE, kind));
         }
         if (attributes == null) {
             return false;
@@ -72,6 +81,50 @@ public class AttributeServiceImpl implements AttributeService {
 
         AttributeDefinitionUtils.validateAttributes(getAttributes(kind), attributes);
         return true;
+    }
+
+    @Override
+    public List<DataAttribute> listMappingAttributes(String kind) {
+        if (!KIND_EMAIL.equals(kind)) {
+            throw new ValidationException(ValidationError.create(UNSUPPORTED_KIND_MESSAGE, kind));
+        }
+        return List.of(dataRecipientEmailAddress());
+    }
+
+    private DataAttribute dataRecipientEmailAddress() {
+        DataAttributeV3 attribute = new DataAttributeV3();
+
+        attribute.setUuid(DATA_RECIPIENT_EMAIL_ADDRESS_UUID);
+        attribute.setName(DATA_RECIPIENT_EMAIL_ADDRESS_NAME);
+        attribute.setDescription(DATA_RECIPIENT_EMAIL_ADDRESS_DESCRIPTION);
+        attribute.setContentType(AttributeContentType.STRING);
+        attribute.setType(AttributeType.DATA);
+
+        DataAttributeProperties attributeProperties = new DataAttributeProperties();
+        attributeProperties.setLabel(DATA_RECIPIENT_EMAIL_ADDRESS_LABEL);
+        attributeProperties.setRequired(false);
+        attributeProperties.setReadOnly(false);
+        attributeProperties.setVisible(true);
+        attributeProperties.setList(false);
+        attributeProperties.setMultiSelect(false);
+
+        attribute.setProperties(attributeProperties);
+
+        // create restrictions
+        RegexpAttributeConstraint regexpAttributeConstraint = getRegexpAttributeConstraint();
+        attribute.setConstraints(List.of(regexpAttributeConstraint));
+
+        return attribute;
+    }
+
+    private static RegexpAttributeConstraint getRegexpAttributeConstraint() {
+        RegexpAttributeConstraint regexpAttributeConstraint = new RegexpAttributeConstraint();
+        regexpAttributeConstraint.setDescription("Email address");
+        regexpAttributeConstraint.setErrorMessage("Invalid email address format");
+        // this is according to the W3C HTML5 specification:
+        // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+        regexpAttributeConstraint.setData("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+        return regexpAttributeConstraint;
     }
 
     private DataAttribute dataSenderEmailAddress() {
@@ -99,12 +152,7 @@ public class AttributeServiceImpl implements AttributeService {
         attribute.setContent(content);
 
         // create restrictions
-        RegexpAttributeConstraint regexpAttributeConstraint = new RegexpAttributeConstraint();
-        regexpAttributeConstraint.setDescription("Email address");
-        regexpAttributeConstraint.setErrorMessage("Invalid email address format");
-        // this is according to the W3C HTML5 specification:
-        // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
-        regexpAttributeConstraint.setData("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+        RegexpAttributeConstraint regexpAttributeConstraint = getRegexpAttributeConstraint();
         attribute.setConstraints(List.of(regexpAttributeConstraint));
 
         return attribute;

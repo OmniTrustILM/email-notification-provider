@@ -6,6 +6,7 @@ import com.czertainly.api.exception.ValidationError;
 import com.czertainly.api.exception.ValidationException;
 import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
+import com.czertainly.api.model.common.attribute.v3.content.StringAttributeContentV3;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderInstanceRequestDto;
 import com.czertainly.api.model.connector.notification.NotificationProviderNotifyRequestDto;
@@ -27,9 +28,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -140,7 +139,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
     @Override
     public void sendNotification(UUID uuid, NotificationProviderNotifyRequestDto request) throws NotFoundException {
-        logger.info("Received request to send email: eventType={}, resource={}", request.getEventType(), request.getResource());
+        logger.info("Received request to send email: event={}, resource={}", request.getEvent(), request.getResource());
         NotificationInstance notificationInstance = notificationInstanceRepository
                 .findByUuid(uuid)
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
@@ -171,13 +170,26 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
-        List<String> to = new ArrayList<>();
+        LinkedHashSet<String> to = new LinkedHashSet<>();
         for (NotificationRecipientDto recipient : recipients) {
-            if (StringUtils.isBlank(recipient.getEmail())) {
+            boolean emailProvided = false;
+            if (!StringUtils.isBlank(recipient.getEmail())) {
+                to.add(recipient.getEmail());
+                emailProvided = true;
+            }
+            if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
+                StringAttributeContentV3 attributeContent = AttributeDefinitionUtils.getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
+                if (attributeContent != null) {
+                    String email = attributeContent.getData();
+                    if (!StringUtils.isBlank(email)) {
+                        to.add(email);
+                        emailProvided = true;
+                    }
+                }
+            }
+            if (!emailProvided) {
                 logger.debug("No email address is provided for recipient: {}", recipient);
                 throw new ValidationException(List.of(new ValidationError("email", "Email is required")));
-            } else {
-                to.add(recipient.getEmail());
             }
         }
         return to.toArray(new String[0]);
