@@ -181,8 +181,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                 emailProvided = true;
             }
             if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
-                StringAttributeContentV3 attributeContent = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
+                StringAttributeContentV3 attributeContent = AttributeDefinitionUtils.getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
                 if (attributeContent != null) {
                     String email = attributeContent.getData();
                     if (!StringUtils.isBlank(email)) {
