@@ -41,6 +41,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -295,9 +297,12 @@ class NotificationInstanceServiceImplTest {
         recipient.setName("R1");
         NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(List.of(recipient));
 
-        assertThrows(ValidationException.class,
+        ValidationException ex = assertThrows(ValidationException.class,
                 () -> service.sendNotification(uuid, notifyRequest));
         verify(emailSender, never()).send(any(MimeMessage.class));
+        String description = ex.getErrors().get(0).getErrorDescription();
+        assertNotEquals("email", description, "Validation message must carry context, not the bare field name");
+        assertTrue(description.toLowerCase().contains("email"), "Unhelpful validation message: " + description);
     }
 
     @Test
@@ -347,6 +352,96 @@ class NotificationInstanceServiceImplTest {
         service.sendNotification(uuid, buildNotifyRequest(List.of(r1, r2)));
 
         assertEquals(2, mimeMessage.getAllRecipients().length);
+    }
+
+    @Test
+    void sendNotification_parsesMultipleAddressesFromDelimitedMappedAttribute() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setMappedAttributes(List.of(
+                buildRecipientEmailAttribute("a@example.com, b@example.com; c@example.com")));
+
+        service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
+
+        verify(emailSender, times(1)).send(mimeMessage);
+        List<String> addresses = recipientAddresses(mimeMessage);
+        assertEquals(3, addresses.size());
+        assertTrue(addresses.contains("a@example.com"));
+        assertTrue(addresses.contains("b@example.com"));
+        assertTrue(addresses.contains("c@example.com"));
+    }
+
+    @Test
+    void sendNotification_parsesMultipleContentItemsFromMappedAttribute() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setMappedAttributes(List.of(
+                buildRecipientEmailAttributeMulti("a@example.com", "b@example.com")));
+
+        service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
+
+        verify(emailSender, times(1)).send(mimeMessage);
+        List<String> addresses = recipientAddresses(mimeMessage);
+        assertEquals(2, addresses.size());
+        assertTrue(addresses.contains("a@example.com"));
+        assertTrue(addresses.contains("b@example.com"));
+    }
+
+    @Test
+    void sendNotification_skipsInvalidEmailButSendsToValidOnes() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setMappedAttributes(List.of(
+                buildRecipientEmailAttribute("good@example.com, not-an-email, also-good@example.com")));
+
+        service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
+
+        verify(emailSender, times(1)).send(mimeMessage);
+        List<String> addresses = recipientAddresses(mimeMessage);
+        assertEquals(2, addresses.size());
+        assertTrue(addresses.contains("good@example.com"));
+        assertTrue(addresses.contains("also-good@example.com"));
+        assertFalse(addresses.contains("not-an-email"));
+    }
+
+    @Test
+    void sendNotification_throwsValidationWhenAllAddressesInvalid() {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+        when(emailSender.createMimeMessage()).thenReturn(new MimeMessage((jakarta.mail.Session) null));
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setMappedAttributes(List.of(buildRecipientEmailAttribute("not-an-email; also@@bad")));
+        NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(List.of(recipient));
+
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> service.sendNotification(uuid, notifyRequest));
+        verify(emailSender, never()).send(any(MimeMessage.class));
+        String description = ex.getErrors().get(0).getErrorDescription();
+        assertTrue(description.contains("valid email"), "Unhelpful validation message: " + description);
     }
 
     private NotificationProviderInstanceRequestDto buildInstanceRequest() {
@@ -408,5 +503,29 @@ class NotificationInstanceServiceImplTest {
         attribute.setContentType(AttributeContentType.STRING);
         attribute.setContent(List.<BaseAttributeContentV3<?>>of(new StringAttributeContentV3(value)));
         return attribute;
+    }
+
+    private RequestAttributeV3 buildRecipientEmailAttributeMulti(String... values) {
+        RequestAttributeV3 attribute = new RequestAttributeV3();
+        attribute.setUuid(UUID.fromString(AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_UUID));
+        attribute.setName(AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME);
+        attribute.setContentType(AttributeContentType.STRING);
+        List<BaseAttributeContentV3<?>> content = new ArrayList<>();
+        for (String value : values) {
+            content.add(new StringAttributeContentV3(value));
+        }
+        attribute.setContent(content);
+        return attribute;
+    }
+
+    private List<String> recipientAddresses(MimeMessage message) throws Exception {
+        if (message.getAllRecipients() == null) {
+            return List.of();
+        }
+        List<String> addresses = new ArrayList<>();
+        for (jakarta.mail.Address address : message.getAllRecipients()) {
+            addresses.add(address.toString());
+        }
+        return addresses;
     }
 }
