@@ -12,7 +12,6 @@ import com.czertainly.api.model.common.attribute.common.content.data.CodeBlockAt
 import com.czertainly.api.model.common.attribute.common.content.data.ProgrammingLanguageEnum;
 import com.czertainly.api.model.common.attribute.common.properties.DataAttributeProperties;
 import com.czertainly.api.model.common.attribute.v2.DataAttributeV2;
-import com.czertainly.api.model.common.attribute.v2.content.BaseAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.czertainly.api.model.common.attribute.v3.DataAttributeV3;

@@ -28,10 +28,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -173,7 +170,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
-        HashSet<String> to = new HashSet<>();
+        LinkedHashSet<String> to = new LinkedHashSet<>();
         for (NotificationRecipientDto recipient : recipients) {
             boolean emailProvided = false;
             if (!StringUtils.isBlank(recipient.getEmail())) {
