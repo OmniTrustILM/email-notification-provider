@@ -175,30 +175,15 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
 
         emailSender.send(mimeMessage);
-        logger.info("Notification email sent to {} recipient(s): {}", recipients.length, String.join(", ", recipients));
+        if (logger.isInfoEnabled()) {
+            logger.info("Notification email sent to {} recipient(s): {}", recipients.length, String.join(", ", recipients));
+        }
     }
 
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
         LinkedHashSet<String> to = new LinkedHashSet<>();
         for (NotificationRecipientDto recipient : recipients) {
-            boolean emailProvided = false;
-            if (!StringUtils.isBlank(recipient.getEmail())) {
-                emailProvided = true;
-                collectValidEmails(recipient.getEmail(), to);
-            }
-            if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
-                List<StringAttributeContentV3> attributeContents = AttributeDefinitionUtils.getAttributeContentValue(
-                        AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
-                if (attributeContents != null) {
-                    for (StringAttributeContentV3 attributeContent : attributeContents) {
-                        if (attributeContent != null && !StringUtils.isBlank(attributeContent.getData())) {
-                            emailProvided = true;
-                            collectValidEmails(attributeContent.getData(), to);
-                        }
-                    }
-                }
-            }
-            if (!emailProvided) {
+            if (!collectRecipientEmails(recipient, to)) {
                 String recipientName = StringUtils.isBlank(recipient.getName()) ? "<unnamed>" : recipient.getName();
                 logger.warn("No email address is provided for recipient {}", recipientName);
                 throw new ValidationException(List.of(
@@ -211,6 +196,41 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                     ValidationError.create("No valid email address was provided. All recipient addresses were empty or invalid.")));
         }
         return to.toArray(new String[0]);
+    }
+
+    /**
+     * Collects valid email addresses for a single recipient from its direct email field and its
+     * mapped attribute(s). Returns whether the recipient supplied any non-blank email value,
+     * regardless of whether those values turned out to be valid.
+     */
+    private boolean collectRecipientEmails(NotificationRecipientDto recipient, Set<String> to) {
+        boolean emailProvided = false;
+        if (!StringUtils.isBlank(recipient.getEmail())) {
+            emailProvided = true;
+            collectValidEmails(recipient.getEmail(), to);
+        }
+        boolean mappedProvided = collectFromMappedAttributes(recipient, to);
+        return emailProvided || mappedProvided;
+    }
+
+    /** Collects valid emails from the recipient email mapped attribute, across all of its content items. */
+    private boolean collectFromMappedAttributes(NotificationRecipientDto recipient, Set<String> to) {
+        if (recipient.getMappedAttributes() == null || recipient.getMappedAttributes().isEmpty()) {
+            return false;
+        }
+        List<StringAttributeContentV3> attributeContents = AttributeDefinitionUtils.getAttributeContentValue(
+                AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
+        if (attributeContents == null) {
+            return false;
+        }
+        boolean emailProvided = false;
+        for (StringAttributeContentV3 attributeContent : attributeContents) {
+            if (attributeContent != null && !StringUtils.isBlank(attributeContent.getData())) {
+                emailProvided = true;
+                collectValidEmails(attributeContent.getData(), to);
+            }
+        }
+        return emailProvided;
     }
 
     /**
