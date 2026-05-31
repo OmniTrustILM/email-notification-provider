@@ -37,7 +37,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationInstanceServiceImpl.class);
 
-    private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile(AttributeServiceImpl.EMAIL_ADDRESS_REGEX);
+    private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile(AttributeServiceImpl.EMAIL_ADDRESS_PATTERN);
 
     // A single mapped-attribute content string may carry several addresses separated by ',' or ';'.
     private static final String EMAIL_ADDRESS_DELIMITER_REGEX = "[,;]";

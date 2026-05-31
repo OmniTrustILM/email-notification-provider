@@ -34,7 +34,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     // Single email address, according to the W3C HTML5 specification:
     // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
-    private static final String EMAIL_ADDRESS_PATTERN = "[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*";
+    public static final String EMAIL_ADDRESS_PATTERN = "[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*";
 
     /** Anchored regex matching exactly one email address. Used to validate each parsed recipient address. */
     public static final String EMAIL_ADDRESS_REGEX = "^" + EMAIL_ADDRESS_PATTERN + "$";
