@@ -175,8 +175,10 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
 
         emailSender.send(mimeMessage);
-        if (logger.isInfoEnabled()) {
-            logger.info("Notification email sent to {} recipient(s): {}", recipients.length, String.join(", ", recipients));
+        logger.info("Notification email sent to {} recipient(s)", recipients.length);
+        if (logger.isDebugEnabled()) {
+            // Recipient addresses are personal data — keep them out of INFO logs.
+            logger.debug("Notification email sent to recipients: {}", String.join(", ", recipients));
         }
     }
 
@@ -185,9 +187,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         for (NotificationRecipientDto recipient : recipients) {
             if (!collectRecipientEmails(recipient, to)) {
                 String recipientName = StringUtils.isBlank(recipient.getName()) ? "<unnamed>" : recipient.getName();
-                logger.warn("No email address is provided for recipient {}", recipientName);
-                throw new ValidationException(List.of(
-                        ValidationError.create("No email address was provided for recipient {}", recipientName)));
+                logger.warn("No email address provided for recipient {}; skipping this recipient", recipientName);
             }
         }
         if (to.isEmpty()) {

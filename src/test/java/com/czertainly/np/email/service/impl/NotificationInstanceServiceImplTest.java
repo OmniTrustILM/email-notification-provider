@@ -471,6 +471,30 @@ class NotificationInstanceServiceImplTest {
         assertFalse(addresses.contains("b@example.com"));
     }
 
+    @Test
+    void sendNotification_skipsRecipientWithNoAddressButDeliversToValidOnes() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto empty = new NotificationRecipientDto();
+        empty.setName("R1"); // neither email nor mapped attributes
+
+        NotificationRecipientDto valid = new NotificationRecipientDto();
+        valid.setName("R2");
+        valid.setEmail("valid@example.com");
+
+        service.sendNotification(uuid, buildNotifyRequest(List.of(empty, valid)));
+
+        verify(emailSender, times(1)).send(mimeMessage);
+        List<String> addresses = recipientAddresses(mimeMessage);
+        assertEquals(1, addresses.size());
+        assertTrue(addresses.contains("valid@example.com"));
+    }
+
     private NotificationProviderInstanceRequestDto buildInstanceRequest() {
         NotificationProviderInstanceRequestDto request = new NotificationProviderInstanceRequestDto();
         request.setName(INSTANCE_NAME);

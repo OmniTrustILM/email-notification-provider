@@ -131,7 +131,7 @@ The mapped attribute accepts multiple addresses in two ways:
 
 The `email` field is treated as a single address and is not split on `,`/`;`.
 
-Each resolved address is validated individually. Invalid addresses are skipped and logged (at `WARN`), so a single malformed entry never aborts delivery to the remaining valid recipients. If no valid address can be resolved for the whole request, the notification is rejected with a validation error.
+Each resolved address is validated individually. Invalid addresses, and recipients that supply no address at all, are skipped and logged (at `WARN`), so a single malformed or empty entry never aborts delivery to the remaining valid recipients. Only when no valid address can be resolved for the whole request is the notification rejected with a validation error.
 
 ## How to enable DEBUG logs
 
