@@ -444,6 +444,33 @@ class NotificationInstanceServiceImplTest {
         assertTrue(description.contains("valid email"), "Unhelpful validation message: " + description);
     }
 
+    @Test
+    void sendNotification_directEmailIsTreatedAsSingleAddressNotDelimited() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        // A comma in the direct email field is not a delimiter — it makes the value a single, invalid address.
+        NotificationRecipientDto delimited = new NotificationRecipientDto();
+        delimited.setName("R1");
+        delimited.setEmail("a@example.com, b@example.com");
+        NotificationRecipientDto valid = new NotificationRecipientDto();
+        valid.setName("R2");
+        valid.setEmail("valid@example.com");
+
+        service.sendNotification(uuid, buildNotifyRequest(List.of(delimited, valid)));
+
+        verify(emailSender, times(1)).send(mimeMessage);
+        List<String> addresses = recipientAddresses(mimeMessage);
+        assertEquals(1, addresses.size());
+        assertTrue(addresses.contains("valid@example.com"));
+        assertFalse(addresses.contains("a@example.com"));
+        assertFalse(addresses.contains("b@example.com"));
+    }
+
     private NotificationProviderInstanceRequestDto buildInstanceRequest() {
         NotificationProviderInstanceRequestDto request = new NotificationProviderInstanceRequestDto();
         request.setName(INSTANCE_NAME);

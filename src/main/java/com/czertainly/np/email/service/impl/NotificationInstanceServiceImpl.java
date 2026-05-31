@@ -207,7 +207,9 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         boolean emailProvided = false;
         if (!StringUtils.isBlank(recipient.getEmail())) {
             emailProvided = true;
-            collectValidEmails(recipient.getEmail(), to);
+            // The direct email field carries a single address (sourced by core from one
+            // user/role/group); it is not a delimited list, so it is not split.
+            addValidEmail(recipient.getEmail().trim(), to);
         }
         boolean mappedProvided = collectFromMappedAttributes(recipient, to);
         return emailProvided || mappedProvided;
@@ -234,21 +236,28 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     /**
-     * Splits a raw recipient value on ',' / ';', validates each address, and adds the valid ones
-     * to {@code target}. Invalid addresses are logged and skipped so a single malformed entry does
-     * not abort delivery to the remaining recipients.
+     * Splits a raw mapped-attribute value on ',' / ';', then validates and adds each address to
+     * {@code target}. Used for the mapped attribute, whose content may carry several addresses.
      */
     private void collectValidEmails(String rawValue, Set<String> target) {
         for (String token : rawValue.split(EMAIL_ADDRESS_DELIMITER_REGEX)) {
-            String email = token.trim();
-            if (email.isEmpty()) {
-                continue;
-            }
-            if (EMAIL_ADDRESS_PATTERN.matcher(email).matches()) {
-                target.add(email);
-            } else {
-                logger.warn("Skipping invalid email address '{}' while preparing notification recipients", email);
-            }
+            addValidEmail(token.trim(), target);
+        }
+    }
+
+    /**
+     * Adds a single, already-trimmed address to {@code target} when it is a valid email. Blank or
+     * invalid values are skipped (invalid ones logged) so one malformed entry does not abort
+     * delivery to the remaining recipients.
+     */
+    private void addValidEmail(String email, Set<String> target) {
+        if (email.isEmpty()) {
+            return;
+        }
+        if (EMAIL_ADDRESS_PATTERN.matcher(email).matches()) {
+            target.add(email);
+        } else {
+            logger.warn("Skipping invalid email address '{}' while preparing notification recipients", email);
         }
     }
 }
