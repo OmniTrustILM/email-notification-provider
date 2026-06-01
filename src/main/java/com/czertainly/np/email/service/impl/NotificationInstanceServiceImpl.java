@@ -184,10 +184,12 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
         LinkedHashSet<String> to = new LinkedHashSet<>();
-        for (NotificationRecipientDto recipient : recipients) {
-            if (!collectRecipientEmails(recipient, to)) {
-                String recipientName = StringUtils.isBlank(recipient.getName()) ? "<unnamed>" : recipient.getName();
-                logger.warn("No email address provided for recipient {}; skipping this recipient", recipientName);
+        if (recipients != null) {
+            for (NotificationRecipientDto recipient : recipients) {
+                if (!collectRecipientEmails(recipient, to)) {
+                    String recipientName = StringUtils.isBlank(recipient.getName()) ? "<unnamed>" : recipient.getName();
+                    logger.warn("No email address provided for recipient {}; skipping this recipient", recipientName);
+                }
             }
         }
         if (to.isEmpty()) {
