@@ -495,6 +495,20 @@ class NotificationInstanceServiceImplTest {
         assertTrue(addresses.contains("valid@example.com"));
     }
 
+    @Test
+    void sendNotification_throwsValidationWhenRecipientsNull() {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+        when(emailSender.createMimeMessage()).thenReturn(new MimeMessage((jakarta.mail.Session) null));
+
+        NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(null);
+
+        assertThrows(ValidationException.class,
+                () -> service.sendNotification(uuid, notifyRequest));
+        verify(emailSender, never()).send(any(MimeMessage.class));
+    }
+
     private NotificationProviderInstanceRequestDto buildInstanceRequest() {
         NotificationProviderInstanceRequestDto request = new NotificationProviderInstanceRequestDto();
         request.setName(INSTANCE_NAME);

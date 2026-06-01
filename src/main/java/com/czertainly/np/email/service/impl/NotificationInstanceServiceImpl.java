@@ -193,7 +193,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
             }
         }
         if (to.isEmpty()) {
-            logger.warn("No valid email address could be resolved from {} recipient(s); all addresses were empty or invalid", recipients.size());
+            int recipientCount = recipients == null ? 0 : recipients.size();
+            logger.warn("No valid email address could be resolved from {} recipient(s); all addresses were empty or invalid", recipientCount);
             throw new ValidationException(List.of(
                     ValidationError.create("No valid email address was provided. All recipient addresses were empty or invalid.")));
         }
