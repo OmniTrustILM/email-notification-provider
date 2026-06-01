@@ -175,10 +175,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
 
         emailSender.send(mimeMessage);
-        logger.info("Notification email sent to {} recipient(s)", recipients.length);
-        if (logger.isDebugEnabled()) {
-            // Recipient addresses are personal data — keep them out of INFO logs.
-            logger.debug("Notification email sent to recipients: {}", String.join(", ", recipients));
+        if (logger.isInfoEnabled()) {
+            logger.info("Notification email sent to {} recipients: {}", recipients.length, String.join(", ", recipients));
         }
     }
 
