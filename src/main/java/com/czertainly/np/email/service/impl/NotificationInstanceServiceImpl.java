@@ -29,12 +29,18 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class NotificationInstanceServiceImpl implements NotificationInstanceService {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationInstanceServiceImpl.class);
+
+    private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile(AttributeServiceImpl.EMAIL_ADDRESS_PATTERN);
+
+    // A single mapped-attribute content string may carry several addresses separated by ',' or ';'.
+    private static final String EMAIL_ADDRESS_DELIMITER_REGEX = "[,;]";
 
     private NotificationInstanceRepository notificationInstanceRepository;
 
@@ -155,9 +161,12 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         final String substitutedHtmlMsg = TemplateUtils.processFreeMarkerTemplate(htmlMsg, request);
         final String substitutedSubject = TemplateUtils.processFreeMarkerTemplate(Subject, request);
 
+        logger.debug("Resolving recipients from request input: {}", request.getRecipients());
+        final String[] recipients = getRecipients(request.getRecipients());
+
         try {
             helper.setText(substitutedHtmlMsg, true);
-            helper.setTo(getRecipients(request.getRecipients()));
+            helper.setTo(recipients);
             helper.setSubject(substitutedSubject);
             helper.setFrom(notificationInstance.getEmailFrom());
         } catch (MessagingException e) {
@@ -166,32 +175,90 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
 
         emailSender.send(mimeMessage);
-        logger.info("Email sent to: {}", request.getRecipients());
+        if (logger.isInfoEnabled()) {
+            logger.info("Notification email sent to {} recipients: {}", recipients.length, String.join(", ", recipients));
+        }
     }
 
     private String[] getRecipients(List<NotificationRecipientDto> recipients) {
         LinkedHashSet<String> to = new LinkedHashSet<>();
-        for (NotificationRecipientDto recipient : recipients) {
-            boolean emailProvided = false;
-            if (!StringUtils.isBlank(recipient.getEmail())) {
-                to.add(recipient.getEmail());
-                emailProvided = true;
-            }
-            if (recipient.getMappedAttributes() != null && !recipient.getMappedAttributes().isEmpty()) {
-                StringAttributeContentV3 attributeContent = AttributeDefinitionUtils.getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
-                if (attributeContent != null) {
-                    String email = attributeContent.getData();
-                    if (!StringUtils.isBlank(email)) {
-                        to.add(email);
-                        emailProvided = true;
-                    }
+        if (recipients != null) {
+            for (NotificationRecipientDto recipient : recipients) {
+                if (!collectRecipientEmails(recipient, to)) {
+                    String recipientName = StringUtils.isBlank(recipient.getName()) ? "<unnamed>" : recipient.getName();
+                    logger.warn("No email address provided for recipient {}; skipping this recipient", recipientName);
                 }
             }
-            if (!emailProvided) {
-                logger.debug("No email address is provided for recipient: {}", recipient);
-                throw new ValidationException(List.of(new ValidationError("email", "Email is required")));
-            }
+        }
+        if (to.isEmpty()) {
+            int recipientCount = recipients == null ? 0 : recipients.size();
+            logger.warn("No valid email address could be resolved from {} recipient(s); all addresses were empty or invalid", recipientCount);
+            throw new ValidationException(List.of(
+                    ValidationError.create("No valid email address was provided. All recipient addresses were empty or invalid.")));
         }
         return to.toArray(new String[0]);
+    }
+
+    /**
+     * Collects valid email addresses for a single recipient from its direct email field and its
+     * mapped attribute(s). Returns whether the recipient supplied any non-blank email value,
+     * regardless of whether those values turned out to be valid.
+     */
+    private boolean collectRecipientEmails(NotificationRecipientDto recipient, Set<String> to) {
+        boolean emailProvided = false;
+        if (!StringUtils.isBlank(recipient.getEmail())) {
+            emailProvided = true;
+            // The direct email field carries a single address (sourced by core from one
+            // user/role/group); it is not a delimited list, so it is not split.
+            addValidEmail(recipient.getEmail().trim(), to);
+        }
+        boolean mappedProvided = collectFromMappedAttributes(recipient, to);
+        return emailProvided || mappedProvided;
+    }
+
+    /** Collects valid emails from the recipient email mapped attribute, across all of its content items. */
+    private boolean collectFromMappedAttributes(NotificationRecipientDto recipient, Set<String> to) {
+        if (recipient.getMappedAttributes() == null || recipient.getMappedAttributes().isEmpty()) {
+            return false;
+        }
+        List<StringAttributeContentV3> attributeContents = AttributeDefinitionUtils.getAttributeContentValue(
+                AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
+        if (attributeContents == null) {
+            return false;
+        }
+        boolean emailProvided = false;
+        for (StringAttributeContentV3 attributeContent : attributeContents) {
+            if (attributeContent != null && !StringUtils.isBlank(attributeContent.getData())) {
+                emailProvided = true;
+                collectValidEmails(attributeContent.getData(), to);
+            }
+        }
+        return emailProvided;
+    }
+
+    /**
+     * Splits a raw mapped-attribute value on ',' / ';', then validates and adds each address to
+     * {@code target}. Used for the mapped attribute, whose content may carry several addresses.
+     */
+    private void collectValidEmails(String rawValue, Set<String> target) {
+        for (String token : rawValue.split(EMAIL_ADDRESS_DELIMITER_REGEX)) {
+            addValidEmail(token.trim(), target);
+        }
+    }
+
+    /**
+     * Adds a single, already-trimmed address to {@code target} when it is a valid email. Blank or
+     * invalid values are skipped (invalid ones logged) so one malformed entry does not abort
+     * delivery to the remaining recipients.
+     */
+    private void addValidEmail(String email, Set<String> target) {
+        if (email.isEmpty()) {
+            return;
+        }
+        if (EMAIL_ADDRESS_PATTERN.matcher(email).matches()) {
+            target.add(email);
+        } else {
+            logger.warn("Skipping invalid email address '{}' while preparing notification recipients", email);
+        }
     }
 }

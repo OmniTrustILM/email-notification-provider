@@ -117,6 +117,22 @@ Will parse the final notification Content Template to be:
 </button>
 ```
 
+## Recipients
+
+The recipients of a notification are resolved from each entry in the `recipients` array of the notification request. For every recipient the provider collects email addresses from two sources:
+
+- the `email` field — a **single** recipient address (populated by the platform from one user/role/group), and
+- the **Recipient email address** mapped attribute (`data_recipientEmailAddress`, content type `STRING`), which may carry **multiple** addresses.
+
+The mapped attribute accepts multiple addresses in two ways:
+
+1. **Delimited string** — a single content value containing several addresses separated by `,` or `;` (surrounding whitespace is ignored), e.g. `alice@example.com, bob@example.com; carol@example.com`.
+2. **Multiple content items** — the attribute carries several content items, each holding one address (or itself a delimited string).
+
+The `email` field is treated as a single address and is not split on `,`/`;`.
+
+Each resolved address is validated individually. Invalid addresses, and recipients that supply no address at all, are skipped and logged (at `WARN`), so a single malformed or empty entry never aborts delivery to the remaining valid recipients. Only when no valid address can be resolved for the whole request is the notification rejected with a validation error.
+
 ## How to enable DEBUG logs
 
 To enable DEBUG logs for the implementation of the email notification provider, you need to set the following environment variable:

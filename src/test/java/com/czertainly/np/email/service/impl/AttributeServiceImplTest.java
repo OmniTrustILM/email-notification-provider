@@ -121,16 +121,24 @@ class AttributeServiceImplTest {
         assertFalse(recipient.getProperties().isRequired());
         assertFalse(recipient.getProperties().isReadOnly());
         assertTrue(recipient.getProperties().isVisible());
-        assertFalse(recipient.getProperties().isList());
-        assertFalse(recipient.getProperties().isMultiSelect());
+        assertTrue(recipient.getProperties().isList());
+        assertTrue(recipient.getProperties().isMultiSelect());
 
         assertEquals(1, recipient.getConstraints().size());
         BaseAttributeConstraint<?> constraint = recipient.getConstraints().get(0);
         assertInstanceOf(RegexpAttributeConstraint.class, constraint);
         RegexpAttributeConstraint regex = (RegexpAttributeConstraint) constraint;
-        assertEquals("Email address", regex.getDescription());
-        assertEquals("Invalid email address format", regex.getErrorMessage());
-        assertNotNull(regex.getData());
+        assertEquals("Email address(es)", regex.getDescription());
+        assertEquals("Invalid email address format. Separate multiple addresses with ',' or ';'.", regex.getErrorMessage());
+        assertEquals(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX, regex.getData());
+    }
+
+    @Test
+    void recipientEmailListRegex_acceptsSingleAndDelimitedAddresses_rejectsInvalid() {
+        assertTrue("a@example.com".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
+        assertTrue("a@example.com, b@example.com; c@example.com".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
+        assertFalse("not-an-email".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
+        assertFalse("a@example.com, not-an-email".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
     }
 
     @Test

@@ -32,6 +32,16 @@ public class AttributeServiceImpl implements AttributeService {
     private static final String KIND_EMAIL = "EMAIL";
     private static final String UNSUPPORTED_KIND_MESSAGE = "Unsupported kind {}";
 
+    // Single email address, according to the W3C HTML5 specification:
+    // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+    public static final String EMAIL_ADDRESS_PATTERN = "[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*";
+
+    /** Anchored regex matching exactly one email address. Used to validate each parsed recipient address. */
+    public static final String EMAIL_ADDRESS_REGEX = "^" + EMAIL_ADDRESS_PATTERN + "$";
+
+    /** Regex matching one or more email addresses separated by ',' or ';' (surrounding whitespace allowed). */
+    public static final String EMAIL_ADDRESS_LIST_REGEX = "^\\s*" + EMAIL_ADDRESS_PATTERN + "(?:\\s*[,;]\\s*" + EMAIL_ADDRESS_PATTERN + ")*\\s*$";
+
     public static final String DATA_SENDER_EMAIL_ADDRESS_UUID = "3a1aed46-7e45-4e13-b4c0-5d33e5dc73f8";
     public static final String DATA_SENDER_EMAIL_ADDRESS_NAME = "data_senderEmailAddress";
     public static final String DATA_SENDER_EMAIL_ADDRESS_DESCRIPTION = "Email address from which the email will be sent";
@@ -39,7 +49,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     public static final String DATA_RECIPIENT_EMAIL_ADDRESS_UUID = "522f2a57-4db2-408e-b7ed-7aee4bd96282";
     public static final String DATA_RECIPIENT_EMAIL_ADDRESS_NAME = "data_recipientEmailAddress";
-    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_DESCRIPTION = "Email address to which the email will be sent";
+    public static final String DATA_RECIPIENT_EMAIL_ADDRESS_DESCRIPTION = "Email address(es) to which the email will be sent. Multiple addresses may be provided either as a single value separated by ',' or ';', or as multiple attribute content items. Each address is validated individually and invalid addresses are skipped.";
     public static final String DATA_RECIPIENT_EMAIL_ADDRESS_LABEL = "Recipient email address";
 
     public static final String DATA_SUBJECT_UUID = "cc56a091-3e99-446b-b366-1820afa75c97";
@@ -105,25 +115,33 @@ public class AttributeServiceImpl implements AttributeService {
         attributeProperties.setRequired(false);
         attributeProperties.setReadOnly(false);
         attributeProperties.setVisible(true);
-        attributeProperties.setList(false);
-        attributeProperties.setMultiSelect(false);
+        attributeProperties.setList(true);
+        attributeProperties.setMultiSelect(true);
 
         attribute.setProperties(attributeProperties);
 
         // create restrictions
-        RegexpAttributeConstraint regexpAttributeConstraint = getRegexpAttributeConstraint();
+        RegexpAttributeConstraint regexpAttributeConstraint = getEmailListRegexpConstraint();
         attribute.setConstraints(List.of(regexpAttributeConstraint));
 
         return attribute;
     }
 
     private static RegexpAttributeConstraint getRegexpAttributeConstraint() {
+        return buildRegexpConstraint("Email address", "Invalid email address format", EMAIL_ADDRESS_REGEX);
+    }
+
+    private static RegexpAttributeConstraint getEmailListRegexpConstraint() {
+        return buildRegexpConstraint("Email address(es)",
+                "Invalid email address format. Separate multiple addresses with ',' or ';'.",
+                EMAIL_ADDRESS_LIST_REGEX);
+    }
+
+    private static RegexpAttributeConstraint buildRegexpConstraint(String description, String errorMessage, String regex) {
         RegexpAttributeConstraint regexpAttributeConstraint = new RegexpAttributeConstraint();
-        regexpAttributeConstraint.setDescription("Email address");
-        regexpAttributeConstraint.setErrorMessage("Invalid email address format");
-        // this is according to the W3C HTML5 specification:
-        // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
-        regexpAttributeConstraint.setData("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+        regexpAttributeConstraint.setDescription(description);
+        regexpAttributeConstraint.setErrorMessage(errorMessage);
+        regexpAttributeConstraint.setData(regex);
         return regexpAttributeConstraint;
     }
 
