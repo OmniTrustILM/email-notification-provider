@@ -137,7 +137,7 @@ Each resolved address is validated individually. Invalid addresses, and recipien
 
 To enable DEBUG logs for the implementation of the email notification provider, you need to set the following environment variable:
 ```shell
-LOGGING_LEVEL_COM_CZERTAINLY=DEBUG
+LOGGING_LEVEL_COM_OTILM=DEBUG
 ```
 
 To enable DEBUG logs for the mail sending process and SMTP related information, you need to set the following environment variable:
