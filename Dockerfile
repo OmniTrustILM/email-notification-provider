@@ -9,7 +9,7 @@ RUN mvn -f /home/app/pom.xml clean package
 # Package stage
 FROM eclipse-temurin:21.0.11_10-jre-alpine
 
-MAINTAINER OmniTrust <support@omnitrust.com>
+LABEL org.opencontainers.image.authors="ILM <support@otilm.com>"
 
 # add non root user otilm
 RUN addgroup --system --gid 10001 otilm && adduser --system --home /opt/otilm --uid 10001 --ingroup otilm otilm

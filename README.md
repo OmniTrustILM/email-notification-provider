@@ -1,6 +1,6 @@
-# OmniTrust Email Notification Provider
+# Email Notification Provider
 
-> This repository is part of the OmniTrust platform. You can find more information about the project at [OmniTrust](https://www.omnitrust.com).
+> This repository is part of the commercial open-source project ILM. You can find more information about the project at the [ILM](https://github.com/OmniTrustILM/ilm) repository, including the contribution guide.
 
 Email Notification Provider `Connector` is the implementation of the following `Function Groups` and `Kinds`:
 
@@ -19,13 +19,13 @@ Email Notification Provider `Connector` requires the PostgreSQL database to stor
 
 ## Interfaces
 
-Email Notification Provider implements `Notification Provider` interfaces. To learn more about the interfaces and end points, refer to the [OmniTrust Interfaces](https://github.com/OmniTrustILM/interfaces).
+Email Notification Provider implements `Notification Provider` interfaces. To learn more about the interfaces and end points, refer to the [Interfaces](https://github.com/OmniTrustILM/interfaces).
 
-For more information, please refer to the [OmniTrust documentation](https://docs.otilm.com).
+For more information, please refer to the [documentation](https://docs.otilm.com).
 
 ## Docker container
 
-Email Notification Provider `Connector` is provided as a Docker container. Use the `ilm/email-notification-provider:tagname` to pull the required image from the repository. It can be configured using the following environment variables:
+Email Notification Provider `Connector` is provided as a Docker container. Use the `hub.omnitrustregistry.com/ilm/email-notification-provider:tagname` to pull the required image from the repository. It can be configured using the following environment variables:
 
 | Variable        | Description                                              | Required                                           | Default value |
 |-----------------|----------------------------------------------------------|----------------------------------------------------|---------------|
