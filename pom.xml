@@ -22,14 +22,12 @@
     </properties>
 
     <dependencies>
-        <!-- OmniTrust -->
         <dependency>
             <groupId>com.otilm</groupId>
             <artifactId>interfaces</artifactId>
             <version>2.18.1-SNAPSHOT</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/net.sf.kxml/kxml2 -->
         <dependency>
             <groupId>net.sf.kxml</groupId>
             <artifactId>kxml2</artifactId>

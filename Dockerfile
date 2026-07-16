@@ -9,15 +9,15 @@ RUN mvn -f /home/app/pom.xml clean package
 # Package stage
 FROM eclipse-temurin:21.0.11_10-jre-alpine
 
-MAINTAINER CZERTAINLY <support@czertainly.com>
+MAINTAINER OmniTrust <support@omnitrust.com>
 
-# add non root user czertainly
-RUN addgroup --system --gid 10001 czertainly && adduser --system --home /opt/czertainly --uid 10001 --ingroup czertainly czertainly
+# add non root user otilm
+RUN addgroup --system --gid 10001 otilm && adduser --system --home /opt/otilm --uid 10001 --ingroup otilm otilm
 
 COPY --from=build /home/app/docker /
-COPY --from=build /home/app/target/*.jar /opt/czertainly/app.jar
+COPY --from=build /home/app/target/*.jar /opt/otilm/app.jar
 
-WORKDIR /opt/czertainly
+WORKDIR /opt/otilm
 
 ENV JDBC_URL=
 ENV JDBC_USERNAME=
@@ -34,4 +34,4 @@ ENV JAVA_OPTS=
 
 USER 10001
 
-ENTRYPOINT ["/opt/czertainly/entry.sh"]
+ENTRYPOINT ["/opt/otilm/entry.sh"]
