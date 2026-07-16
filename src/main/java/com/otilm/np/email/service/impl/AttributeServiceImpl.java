@@ -196,7 +196,7 @@ public class AttributeServiceImpl implements AttributeService {
         attribute.setProperties(attributeProperties);
 
         List<StringAttributeContentV2> content = new ArrayList<>();
-        StringAttributeContentV2 attributeContent = new StringAttributeContentV2("Email subject");
+        StringAttributeContentV2 attributeContent = new StringAttributeContentV2(DATA_SUBJECT_LABEL);
         content.add(attributeContent);
         attribute.setContent(content);
 

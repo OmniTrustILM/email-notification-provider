@@ -10,7 +10,6 @@ import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
 import com.otilm.np.email.service.HealthService;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -18,8 +17,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.Mockito.when;
+
 @SpringBootTest
-public class BaseSpringBootTest {
+class BaseSpringBootTest {
 
     @MockitoBean
     private HealthService healthService;
@@ -36,11 +37,11 @@ public class BaseSpringBootTest {
     protected static final String ERROR_MESSAGE = "Test error message";
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         // Define behavior for the mock if needed
         HealthDto healthDto = new HealthDto();
         healthDto.setStatus(HealthStatus.OK);
-        Mockito.when(healthService.checkHealth()).thenReturn(healthDto);
+        when(healthService.checkHealth()).thenReturn(healthDto);
     }
 
     protected NotificationProviderNotifyRequestDto createCertStatusChangedNotificationRequest() {

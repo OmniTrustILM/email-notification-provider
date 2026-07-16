@@ -32,7 +32,7 @@ public class NotificationInstanceControllerImpl implements NotificationInstanceC
         this.attributeService = attributeService;
     }
 
-    //////// NotificationInstanceController implementation ////////
+    // NotificationInstanceController implementation
 
     @Override
     public List<NotificationProviderInstanceDto> listNotificationInstances() {
