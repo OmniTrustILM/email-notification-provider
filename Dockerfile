@@ -12,8 +12,6 @@ FROM eclipse-temurin:21.0.11_10-jre-alpine
 LABEL org.opencontainers.image.authors="ILM <support@otilm.com>"
 
 # Upgrade OS packages to pick up security fixes not yet in the base image
-# (libexpat CVE-2026-56131/56407/56408, p11-kit CVE-2026-2100).
-# Remove once eclipse-temurin:21-jre-alpine ships the patched Alpine packages.
 RUN apk update && apk upgrade --no-cache
 
 # add non root user otilm
