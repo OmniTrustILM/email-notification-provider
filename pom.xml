@@ -20,7 +20,7 @@
         <sonar.organization>ilm</sonar.organization>
         <sonar.projectKey>ilm_email-notification-provider</sonar.projectKey>
         <sonar.cpd.exclusions>src/main/java/com/otilm/np/email/dao/entity/**</sonar.cpd.exclusions>
-        <sonar.coverage.exclusions>src/main/java/com/otilm/np/email/dao/entity/**,src/main/java/com/otilm/np/email/api/**,src/main/java/com/otilm/np/email/dto/**</sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>src/main/java/com/otilm/np/email/dao/entity/**,src/main/java/com/otilm/np/email/api/**,src/main/java/com/otilm/np/email/dto/**,src/main/java/com/otilm/np/email/ExceptionHandlingAdvice.java</sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
