@@ -20,7 +20,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-class BaseSpringBootTest {
+abstract class BaseSpringBootTest {
 
     @MockitoBean
     private HealthService healthService;

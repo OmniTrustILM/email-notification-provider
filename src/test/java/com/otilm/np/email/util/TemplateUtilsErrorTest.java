@@ -15,15 +15,17 @@ class TemplateUtilsErrorTest {
 
     @Test
     void malformedTemplateThrowsCreationError() {
+        NotificationProviderNotifyRequestDto request = request();
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate("${unclosed", request()));
+                () -> TemplateUtils.processFreeMarkerTemplate("${unclosed", request));
         assertTrue(ex.getMessage().contains("creating FreeMarker template"));
     }
 
     @Test
     void unresolvedReferenceThrowsProcessingError() {
+        NotificationProviderNotifyRequestDto request = request();
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate("${totallyMissingVar}", request()));
+                () -> TemplateUtils.processFreeMarkerTemplate("${totallyMissingVar}", request));
         assertTrue(ex.getMessage().contains("processing FreeMarker template"));
     }
 
