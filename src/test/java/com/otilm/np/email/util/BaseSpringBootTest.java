@@ -46,7 +46,7 @@ abstract class BaseSpringBootTest {
 
     protected NotificationProviderNotifyRequestDto createCertStatusChangedNotificationRequest() {
         NotificationRecipientDto recipient = new NotificationRecipientDto();
-        recipient.setEmail("test@czertainly.com");
+        recipient.setEmail("test@ilm.com");
         recipient.setName("Test User");
 
         CertificateStatusChangedEventData notificationData = new CertificateStatusChangedEventData();
@@ -68,7 +68,7 @@ abstract class BaseSpringBootTest {
 
     protected NotificationProviderNotifyRequestDto createCertActionPerformedNotificationRequest() {
         NotificationRecipientDto recipient = new NotificationRecipientDto();
-        recipient.setEmail("test@czertainly.com");
+        recipient.setEmail("test@ilm.com");
         recipient.setName("Test User");
 
         CertificateActionPerformedEventData notificationData = new CertificateActionPerformedEventData();

@@ -9,7 +9,7 @@ RUN mvn -f /home/app/pom.xml clean package
 # Package stage
 FROM eclipse-temurin:21.0.11_10-jre-alpine
 
-LABEL org.opencontainers.image.authors="ILM <support@otilm.com>"
+LABEL org.opencontainers.image.authors="ILM <ilm@omnitrust.com>"
 
 # Upgrade OS packages to pick up security fixes not yet in the base image
 RUN apk update && apk upgrade --no-cache
@@ -20,7 +20,7 @@ RUN addgroup --system --gid 10001 otilm && adduser --system --home /opt/otilm --
 COPY --from=build /home/app/docker /
 COPY --from=build /home/app/target/*.jar /opt/otilm/app.jar
 
-WORKDIR /opt/otilm
+WORKDIR /opt/email-notification-provider
 
 ENV JDBC_URL=
 ENV JDBC_USERNAME=
@@ -37,4 +37,4 @@ ENV JAVA_OPTS=
 
 USER 10001
 
-ENTRYPOINT ["/opt/otilm/entry.sh"]
+ENTRYPOINT ["/opt/email-notification-provider/entry.sh"]
