@@ -9,15 +9,18 @@ RUN mvn -f /home/app/pom.xml clean package
 # Package stage
 FROM eclipse-temurin:21.0.11_10-jre-alpine
 
-MAINTAINER CZERTAINLY <support@czertainly.com>
+LABEL org.opencontainers.image.authors="ILM <ilm@omnitrust.com>"
 
-# add non root user czertainly
-RUN addgroup --system --gid 10001 czertainly && adduser --system --home /opt/czertainly --uid 10001 --ingroup czertainly czertainly
+# Upgrade OS packages to pick up security fixes not yet in the base image
+RUN apk update && apk upgrade --no-cache
+
+# add non root user email-notification-provider
+RUN addgroup --system --gid 10001 email-notification-provider && adduser --system --home /opt/email-notification-provider --uid 10001 --ingroup email-notification-provider email-notification-provider
 
 COPY --from=build /home/app/docker /
-COPY --from=build /home/app/target/*.jar /opt/czertainly/app.jar
+COPY --from=build /home/app/target/*.jar /opt/email-notification-provider/app.jar
 
-WORKDIR /opt/czertainly
+WORKDIR /opt/email-notification-provider
 
 ENV JDBC_URL=
 ENV JDBC_USERNAME=
@@ -34,4 +37,4 @@ ENV JAVA_OPTS=
 
 USER 10001
 
-ENTRYPOINT ["/opt/czertainly/entry.sh"]
+ENTRYPOINT ["/opt/email-notification-provider/entry.sh"]
