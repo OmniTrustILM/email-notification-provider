@@ -15,10 +15,10 @@ LABEL org.opencontainers.image.authors="ILM <ilm@omnitrust.com>"
 RUN apk update && apk upgrade --no-cache
 
 # add non root user otilm
-RUN addgroup --system --gid 10001 otilm && adduser --system --home /opt/otilm --uid 10001 --ingroup otilm otilm
+RUN addgroup --system --gid 10001 otilm && adduser --system --home /opt/email-notification-provider --uid 10001 --ingroup otilm otilm
 
 COPY --from=build /home/app/docker /
-COPY --from=build /home/app/target/*.jar /opt/otilm/app.jar
+COPY --from=build /home/app/target/*.jar /opt/email-notification-provider/app.jar
 
 WORKDIR /opt/email-notification-provider
 
