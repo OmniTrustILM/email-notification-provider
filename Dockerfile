@@ -14,8 +14,8 @@ LABEL org.opencontainers.image.authors="ILM <ilm@omnitrust.com>"
 # Upgrade OS packages to pick up security fixes not yet in the base image
 RUN apk update && apk upgrade --no-cache
 
-# add non root user otilm
-RUN addgroup --system --gid 10001 otilm && adduser --system --home /opt/email-notification-provider --uid 10001 --ingroup otilm otilm
+# add non root user email-notification-provider
+RUN addgroup --system --gid 10001 email-notification-provider && adduser --system --home /opt/email-notification-provider --uid 10001 --ingroup email-notification-provider email-notification-provider
 
 COPY --from=build /home/app/docker /
 COPY --from=build /home/app/target/*.jar /opt/email-notification-provider/app.jar
