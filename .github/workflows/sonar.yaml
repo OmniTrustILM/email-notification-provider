@@ -42,11 +42,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Checkout the PR branch
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
+          # Required by checkout v7+ for fork PR checkout in workflow_run
+          allow-unsafe-pr-checkout: true
       # Checkout the base branch to keep the information about the new lines of code
       - name: Checkout base branch
         if: github.event.workflow_run.event == 'pull_request'
