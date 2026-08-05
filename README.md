@@ -140,6 +140,9 @@ To enable DEBUG logs for the implementation of the email notification provider, 
 LOGGING_LEVEL_COM_OTILM=DEBUG
 ```
 
+> **Warning**
+> DEBUG logging writes the complete notification request into the logs, including data that can be sensitive — for example the one-time credential of certificate registration events, or object data enabled on the notification profile. Enable it only for troubleshooting and treat the logs accordingly. With the default log level, template-rendering failures are diagnosable from the ERROR log (template identifier, event, resource, and the rendering error) without any payload exposure.
+
 To enable DEBUG logs for the mail sending process and SMTP related information, you need to set the following environment variable:
 ```shell
 SPRING_MAIL_PROPERTIES_MAIL_DEBUG=true

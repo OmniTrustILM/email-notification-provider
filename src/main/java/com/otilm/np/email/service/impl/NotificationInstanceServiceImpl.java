@@ -150,7 +150,9 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                 .findByUuid(uuid)
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
 
-        logger.debug("Request to send email received with the content: {}", request);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Request to send email received with the content: {}", TemplateUtils.describeRequestForDebug(request));
+        }
 
         MimeMessage mimeMessage = emailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
@@ -158,8 +160,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         String htmlMsg = notificationInstance.getContentTemplate();
         String Subject = notificationInstance.getSubject();
 
-        final String substitutedHtmlMsg = TemplateUtils.processFreeMarkerTemplate(htmlMsg, request);
-        final String substitutedSubject = TemplateUtils.processFreeMarkerTemplate(Subject, request);
+        final String substitutedHtmlMsg = TemplateUtils.processFreeMarkerTemplate("email content", htmlMsg, request);
+        final String substitutedSubject = TemplateUtils.processFreeMarkerTemplate("email subject", Subject, request);
 
         logger.debug("Resolving recipients from request input: {}", request.getRecipients());
         final String[] recipients = getRecipients(request.getRecipients());
