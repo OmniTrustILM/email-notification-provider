@@ -38,7 +38,7 @@ Certificate "${notificationData.subjectDn}" status changed to <#if notificationD
 
     @Test
     public void testTemplateUtils() {
-        String processedHtmlTemplate = TemplateUtils.processFreeMarkerTemplate(HTML_TEMPLATE, request);
+        String processedHtmlTemplate = TemplateUtils.processFreeMarkerTemplate("email content", HTML_TEMPLATE, request);
 
         Assertions.assertTrue(processedHtmlTemplate.contains("Subject: " + SUBJECT_DN));
         Assertions.assertTrue(processedHtmlTemplate.contains("Serial Number: " + SERIAL_NUMBER));
@@ -48,7 +48,7 @@ Certificate "${notificationData.subjectDn}" status changed to <#if notificationD
 
     @Test
     public void testTemplateUtilsSubject() {
-        String processedSubject = TemplateUtils.processFreeMarkerTemplate(SUBJECT, request);
+        String processedSubject = TemplateUtils.processFreeMarkerTemplate("email subject", SUBJECT, request);
 
         Assertions.assertTrue(processedSubject.contains("Certificate \"" + SUBJECT_DN + "\" status changed to " + NEW_STATUS));
     }
