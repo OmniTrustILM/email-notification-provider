@@ -37,7 +37,7 @@ public class CertActionPerformedTemplateUtilsTest extends BaseSpringBootTest {
 
     @Test
     public void testTemplateUtils() {
-        String processedHtmlTemplate = TemplateUtils.processFreeMarkerTemplate(HTML_TEMPLATE, request);
+        String processedHtmlTemplate = TemplateUtils.processFreeMarkerTemplate("email content", HTML_TEMPLATE, request);
 
         Assertions.assertTrue(processedHtmlTemplate.contains("Subject: " + SUBJECT_DN));
         Assertions.assertTrue(processedHtmlTemplate.contains("Serial Number: " + SERIAL_NUMBER));
