@@ -41,6 +41,7 @@ Email Notification Provider `Connector` is provided as a Docker container. Use t
 | `SMTP_PASSWORD` | SMTP password                                            | ![](https://img.shields.io/badge/-NO-red.svg)      | `N/A`         |
 | `SMTP_AUTH`     | SMTP authentication                                      | ![](https://img.shields.io/badge/-NO-red.svg)      | `true`        |
 | `SMTP_TLS`      | SMTP TLS                                                 | ![](https://img.shields.io/badge/-NO-red.svg)      | `true`        |
+| `NOTIFICATION_LOG_REQUEST_PAYLOAD` | Include the notification request in DEBUG logs. See [How to enable DEBUG logs](#how-to-enable-debug-logs) | ![](https://img.shields.io/badge/-NO-red.svg) | `false` |
 
 ## Attributes to configure
 
@@ -139,6 +140,17 @@ To enable DEBUG logs for the implementation of the email notification provider, 
 ```shell
 LOGGING_LEVEL_COM_OTILM=DEBUG
 ```
+
+DEBUG logs describe each notification by its identifiers only — event, resource, recipient count, and whether notification data is present. The notification request itself is never written to the logs at any level unless payload logging is switched on explicitly:
+
+```shell
+NOTIFICATION_LOG_REQUEST_PAYLOAD=true
+```
+
+> **Warning**
+> With payload logging enabled, DEBUG logs contain the complete notification request, including data that can be sensitive — for example the one-time credential of certificate registration events, or object data enabled on the notification profile. Enable it only while troubleshooting, and treat the logs accordingly.
+
+Template failures do not need it: they are reported at ERROR level with the template identifier, the event and resource, and the position of the failing expression in the template, without exposing any payload.
 
 To enable DEBUG logs for the mail sending process and SMTP related information, you need to set the following environment variable:
 ```shell

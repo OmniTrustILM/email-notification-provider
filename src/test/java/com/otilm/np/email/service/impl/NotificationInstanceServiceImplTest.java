@@ -24,6 +24,10 @@ import com.otilm.api.model.core.other.ResourceEvent;
 import com.otilm.np.email.dao.entity.NotificationInstance;
 import com.otilm.np.email.dao.repository.NotificationInstanceRepository;
 import com.otilm.np.email.service.AttributeService;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,11 +35,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -541,6 +547,86 @@ class NotificationInstanceServiceImplTest {
         attributes.add(template);
         request.setAttributes(attributes);
         return request;
+    }
+
+    /**
+     * Payload logging is opt-in: raising the log level alone must never write the request into the
+     * logs, only the payload-free summary.
+     */
+    @Test
+    void sendNotification_debugLoggingWithoutOptIn_logsNoPayload() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setEmail("to@example.com");
+        NotificationProviderNotifyRequestDto request = buildNotifyRequest(List.of(recipient));
+        request.setNotificationData(Map.of("credential", "must-not-be-logged"));
+
+        Logger serviceLogger = (Logger) LoggerFactory.getLogger(NotificationInstanceServiceImpl.class);
+        Level originalLevel = serviceLogger.getLevel();
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        serviceLogger.addAppender(appender);
+        serviceLogger.setLevel(Level.DEBUG);
+        try {
+            service.sendNotification(uuid, request);
+        } finally {
+            serviceLogger.setLevel(originalLevel);
+            serviceLogger.detachAppender(appender);
+            appender.stop();
+        }
+
+        List<String> messages = appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+        assertTrue(messages.stream().noneMatch(message -> message.contains("must-not-be-logged")),
+                "DEBUG alone must not write the request payload: " + messages);
+        assertTrue(messages.stream().anyMatch(message -> message.contains("recipients=1")),
+                "the payload-free summary must still be logged: " + messages);
+    }
+
+    /**
+     * With payload logging switched on, the full request is available for troubleshooting.
+     */
+    @Test
+    void sendNotification_debugLoggingRetainsRequestVisibility() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setEmail("to@example.com");
+        NotificationProviderNotifyRequestDto request = buildNotifyRequest(List.of(recipient));
+        request.setNotificationData(Map.of("credential", "debug-visible-credential"));
+
+        service.setLogRequestPayload(true);
+
+        Logger serviceLogger = (Logger) LoggerFactory.getLogger(NotificationInstanceServiceImpl.class);
+        Level originalLevel = serviceLogger.getLevel();
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        serviceLogger.addAppender(appender);
+        serviceLogger.setLevel(Level.DEBUG);
+        try {
+            service.sendNotification(uuid, request);
+        } finally {
+            serviceLogger.setLevel(originalLevel);
+            serviceLogger.detachAppender(appender);
+            appender.stop();
+        }
+
+        assertTrue(appender.list.stream()
+                        .map(ILoggingEvent::getFormattedMessage)
+                        .anyMatch(message -> message.contains("debug-visible-credential")),
+                "with payload logging enabled the request content must be available");
     }
 
     private NotificationProviderNotifyRequestDto buildNotifyRequest(List<NotificationRecipientDto> recipients) {
