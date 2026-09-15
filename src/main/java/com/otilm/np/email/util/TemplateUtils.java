@@ -92,6 +92,7 @@ public class TemplateUtils {
         StringBuilder rewritten = new StringBuilder();
         int segmentStart = 0;
         char quote = 0;
+        boolean escaped = false;
         for (int i = 0; i < expression.length(); i++) {
             char c = expression.charAt(i);
             if (quote == 0) {
@@ -100,8 +101,10 @@ public class TemplateUtils {
                     segmentStart = i;
                     quote = c;
                 }
+            } else if (escaped) {
+                escaped = false;
             } else if (c == '\\') {
-                i++;
+                escaped = true;
             } else if (c == quote) {
                 rewritten.append(expression, segmentStart, i + 1);
                 segmentStart = i + 1;
