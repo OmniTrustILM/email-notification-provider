@@ -54,7 +54,9 @@ Configuring instance of this Email Notification Provider requires to provide the
 | Content Template     | HTML template to be used to send information in email  | `CODEBLOCK`  |
 
 Subject and Content Template attributes support variables that are replaced during notification processing. Variables are replaced with the data coming from the request for notification.
-The varaibles are written in format `${variable}`.
+The variables are written in format `${variable}`.
+
+Values inserted into the Content Template are HTML-escaped, so text written by a user - a comment body, for instance - is delivered as text and never as live markup. A template that has to insert trusted markup from a value opts out with `${variable?no_esc}`; a template that already escaped a value with `?html` keeps working and escapes it once. The Subject is plain text and its values are inserted as they are.
 
 The following is an example of the Content Template with variables:
 ```htlm

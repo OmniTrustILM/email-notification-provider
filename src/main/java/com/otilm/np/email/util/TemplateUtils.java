@@ -6,6 +6,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import freemarker.core.HTMLOutputFormat;
+import freemarker.core.OutputFormat;
+import freemarker.core.PlainTextOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class TemplateUtils {
 
@@ -28,6 +32,7 @@ public class TemplateUtils {
      * unserializable placeholder.
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
+    private static final Pattern LEGACY_HTML_ESCAPE = Pattern.compile("\\?html\\b");
 
     private TemplateUtils() {
     }
@@ -60,7 +65,26 @@ public class TemplateUtils {
     }
 
     /**
-     * Renders the given FreeMarker template against the notification request.
+     * Renders the HTML content template. Every interpolated value is HTML-escaped, so text a user authored - a
+     * comment body - arrives as text and never as live markup; a template that must insert trusted markup says so with
+     * {@code ?no_esc}.
+     */
+    public static String renderHtml(String templateLabel, String templateSource,
+            NotificationProviderNotifyRequestDto request) {
+        // FreeMarker refuses the legacy ?html once values are escaped for it; templates written before that keep
+        // rendering, escaped once, by reading it as ?esc
+        return render(templateLabel, LEGACY_HTML_ESCAPE.matcher(templateSource).replaceAll("?esc"), request,
+                HTMLOutputFormat.INSTANCE);
+    }
+
+    /** Renders a plain-text template, such as the subject line; values are inserted as they are. */
+    public static String renderPlainText(String templateLabel, String templateSource,
+            NotificationProviderNotifyRequestDto request) {
+        return render(templateLabel, templateSource, request, PlainTextOutputFormat.INSTANCE);
+    }
+
+    /**
+     * Renders the given FreeMarker template against the notification request in the given output format.
      *
      * <p>Failure logs and exception messages carry the template label, the event and resource
      * identifiers, and the underlying error only — never the request payload or the data model.
@@ -72,7 +96,8 @@ public class TemplateUtils {
      *
      * @param templateLabel identifies the rendered template in errors, e.g. "email subject"
      */
-    public static String processFreeMarkerTemplate(String templateLabel, String templateSource, NotificationProviderNotifyRequestDto request) {
+    private static String render(String templateLabel, String templateSource,
+            NotificationProviderNotifyRequestDto request, OutputFormat outputFormat) {
         // Convert request to a Map instead of using the JSON node directly
         Map<String, Object> dataModel;
         try {
@@ -91,6 +116,7 @@ public class TemplateUtils {
         cfg.setDefaultEncoding("UTF-8");
         cfg.setLogTemplateExceptions(false);
         cfg.setWrapUncheckedExceptions(true);
+        cfg.setOutputFormat(outputFormat);
 
         // Create template from the HTML string
         Template template;
