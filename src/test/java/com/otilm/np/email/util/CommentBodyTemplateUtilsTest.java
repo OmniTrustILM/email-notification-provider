@@ -59,6 +59,19 @@ class CommentBodyTemplateUtilsTest extends BaseSpringBootTest {
     }
 
     @Test
+    void onlyTheLegacyBuiltInIsRewrittenNeverTemplateText() {
+        Assertions
+                .assertEquals("${notificationData.body?esc} <#if x?esc?has_content>y</#if>",
+                        TemplateUtils.rewriteLegacyHtmlEscape("${notificationData.body?html} <#if x?html?has_content>y</#if>"));
+        String urlInTextAndLiteral = "<a href=\"https://example.test/view?html=true\">${\"https://example.test/view?html=true\"}</a>";
+        Assertions.assertEquals(urlInTextAndLiteral, TemplateUtils.rewriteLegacyHtmlEscape(urlInTextAndLiteral));
+
+        String html = TemplateUtils.renderHtml("email content",
+                "<a href=\"https://example.test/view?html=true\">${notificationData.objectName}</a>", request);
+        Assertions.assertTrue(html.contains("view?html=true"), html);
+    }
+
+    @Test
     void aTemplateCanStillInsertTrustedMarkupDeliberately() {
         String html = TemplateUtils.renderHtml("email content", "<div>${notificationData.body?no_esc}</div>", request);
 
