@@ -52,10 +52,29 @@ class CommentBodyTemplateUtilsTest {
     }
 
     @Test
-    void aTemplateCarryingTheLegacyBuiltInIsRefusedWithTheEditItNeeds() {
+    void aTemplateThatEscapedByHandRendersAsItDidBefore() {
+        String escapedByHand = TemplateUtils
+                .renderHtml("email content", "<div>${notificationData.body?html}</div>", request);
+
+        Assertions
+                .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
+                        escapedByHand);
+        Assertions.assertTrue(escapedByHand.contains("&lt;b&gt;bold&lt;/b&gt;"), escapedByHand);
+        Assertions.assertFalse(escapedByHand.contains("&amp;lt;"), escapedByHand);
+
+        // Where the expression begins does not matter, so a literal holding a brace is no obstacle
+        Assertions
+                .assertTrue(TemplateUtils
+                        .renderHtml("email content", "<div>${notificationData.body?replace(\"}\", \"\")?html}</div>",
+                                request)
+                        .contains("&lt;b&gt;bold&lt;/b&gt;"));
+    }
+
+    @Test
+    void aLegacyEscapeThatIsNotTerminalIsRefusedWithTheEditItNeeds() {
         NotificationException refused = Assertions
                 .assertThrows(NotificationException.class, () -> TemplateUtils
-                        .renderHtml("email content", "<div>${notificationData.body?html}</div>", request));
+                        .renderHtml("email content", "<div>${notificationData.body?html?upper_case}</div>", request));
 
         Assertions.assertTrue(refused.getMessage().contains("?html"), refused.getMessage());
         Assertions.assertTrue(refused.getMessage().contains("?no_esc"), refused.getMessage());

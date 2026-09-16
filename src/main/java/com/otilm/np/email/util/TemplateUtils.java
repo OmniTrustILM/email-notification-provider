@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class TemplateUtils {
 
@@ -31,6 +32,13 @@ public class TemplateUtils {
      * unserializable placeholder.
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
+    /**
+     * The legacy escaping built-in where it is the last thing an interpolation does. Only there can it be dropped
+     * without knowing where the expression begins: nothing else reads its result, and escaping on the way out gives
+     * the same characters it gave. Text that merely looks like it, a URL's {@code ?html=true} for one, is not followed
+     * by the closing brace and is left alone.
+     */
+    private static final Pattern TERMINAL_LEGACY_ESCAPE = Pattern.compile("\\?html(?=\\s*})");
 
     private TemplateUtils() {
     }
@@ -65,12 +73,13 @@ public class TemplateUtils {
     /**
      * Renders the HTML content template. Every interpolated value is HTML-escaped, so text a user authored - a
      * comment body - arrives as text and never as live markup; a template that must insert trusted markup says so with
-     * {@code ?no_esc}. A template written before escaping arrived, carrying {@code ?html}, is refused with the edit it
-     * needs.
+     * {@code ?no_esc}. A template written before escaping arrived keeps working where it wrote {@code ${value?html}},
+     * which renders exactly as it did; any other use of that built-in is refused with the edit it needs.
      */
     public static String renderHtml(String templateLabel, String templateSource,
             NotificationProviderNotifyRequestDto request) {
-        return render(templateLabel, templateSource, request, HTMLOutputFormat.INSTANCE);
+        return render(templateLabel, TERMINAL_LEGACY_ESCAPE.matcher(templateSource).replaceAll(""), request,
+                HTMLOutputFormat.INSTANCE);
     }
 
     /** Renders a plain-text template, such as the subject line; values are inserted as they are. */
@@ -143,7 +152,8 @@ public class TemplateUtils {
 
     /**
      * FreeMarker refuses the legacy {@code ?html} once values are escaped for it, and says so in terms of its own
-     * built-ins. A template carrying that built-in predates the escaping and needs one edit, which this names.
+     * built-ins. What reaches here is a use that cannot simply be dropped - inside a macro call, before another
+     * built-in, or assigned to a variable - so the edit is named for the operator.
      */
     private static String legacyEscapingHint(String templateSource, OutputFormat outputFormat) {
         if (outputFormat == HTMLOutputFormat.INSTANCE && templateSource.contains("?html")) {
