@@ -167,22 +167,40 @@ public class TemplateUtils {
 
     /**
      * The source without the legacy escaping built-in the parser refused, or null when that is not what it refused, or
-     * when another built-in reads the escaped value: dropping it there would hand that built-in the raw text instead.
+     * when the escaped value may be read by a further built-in: dropping it there would hand that built-in the raw
+     * text instead. A closing parenthesis counts as may-be-read, since what encloses the built-in could apply one.
      */
     private static String withoutLegacyEscapeAt(String source, ParseException failure) {
         int name = offsetOf(source, failure.getLineNumber(), failure.getColumnNumber());
-        if (name < 1 || !source.startsWith(LEGACY_ESCAPE, name) || source.charAt(name - 1) != '?') {
+        if (name < 1 || !source.startsWith(LEGACY_ESCAPE, name)) {
+            return null;
+        }
+        int question = skipWhitespaceBack(source, name - 1);
+        if (question < 0 || source.charAt(question) != '?') {
             return null;
         }
         int after = name + LEGACY_ESCAPE.length();
-        int next = after;
-        while (next < source.length() && Character.isWhitespace(source.charAt(next))) {
-            next++;
-        }
-        if (next < source.length() && source.charAt(next) == '?') {
+        int next = skipWhitespace(source, after);
+        if (next < source.length() && (source.charAt(next) == '?' || source.charAt(next) == ')')) {
             return null;
         }
-        return source.substring(0, name - 1) + source.substring(after);
+        return source.substring(0, question) + source.substring(after);
+    }
+
+    private static int skipWhitespace(String source, int from) {
+        int at = from;
+        while (at < source.length() && Character.isWhitespace(source.charAt(at))) {
+            at++;
+        }
+        return at;
+    }
+
+    private static int skipWhitespaceBack(String source, int from) {
+        int at = from;
+        while (at >= 0 && Character.isWhitespace(source.charAt(at))) {
+            at--;
+        }
+        return at;
     }
 
     /** Where the parser's line and column land in the source, or -1 when they name no position in it. */

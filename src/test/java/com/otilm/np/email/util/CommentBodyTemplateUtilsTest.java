@@ -90,6 +90,23 @@ class CommentBodyTemplateUtilsTest {
     }
 
     @Test
+    void aLegacyEscapeWrittenWithSpacesIsDroppedLikeAnyOther() {
+        Assertions
+                .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
+                        TemplateUtils
+                                .renderHtml("email content", "<div>${notificationData.body ? html}</div>", request));
+    }
+
+    @Test
+    void aLegacyEscapeBehindParenthesesIsRefusedRatherThanGuessedAt() {
+        NotificationException refused = Assertions
+                .assertThrows(NotificationException.class, () -> TemplateUtils
+                        .renderHtml("email content", "<div>${(notificationData.body?html)?upper_case}</div>", request));
+
+        Assertions.assertTrue(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
+    }
+
+    @Test
     void aLegacyEscapeThatIsNotTerminalIsRefusedWithTheEditItNeeds() {
         NotificationException refused = Assertions
                 .assertThrows(NotificationException.class, () -> TemplateUtils
