@@ -58,7 +58,18 @@ The variables are written in format `${variable}`.
 
 Values inserted into the Content Template are HTML-escaped, so text written by a user - a comment body, for instance - is delivered as text and never as live markup.
 
-Put a value in element text, or in a quoted attribute value such as `alt="${variable}"`. Escaping does not make a value safe anywhere else, so never place one in an unquoted attribute, inside a `<script>` or `<style>` block, in an event handler such as `onclick`, or where it decides a URL's scheme: in those positions a value stays executable however it is escaped. A value that has to be delivered as markup opts out with `${variable?no_esc}`, and what it carries is then the template author's responsibility.
+Put a value in element text, or in a quoted value of an inert attribute such as `alt`, `title` or `class`. Those are the two positions HTML escaping makes safe, and it makes a value safe in no other:
+
+| Position | Why escaping is not enough |
+|----------|----------------------------|
+| An unquoted attribute | A space in the value starts a new attribute |
+| An event handler, `onclick` and the like | The browser decodes the entities, then runs what is left as JavaScript |
+| Inside `<script>` or `<style>` | The content is script or style, not HTML, so entities are not decoded and the value is read as code |
+| A URL-bearing attribute, `href` or `src` | Escaping does not restrict the scheme, so a value may supply `javascript:` or point anywhere |
+
+A value belongs in those positions only after it has been checked for that position: a URL accepted only with a scheme you allow, and script or style never assembled from a value at all. Where a template must build a link, write the scheme and host itself and interpolate only the part that cannot change the target, as the example below does with a UUID.
+
+A value that has to be delivered as markup opts out with `${variable?no_esc}`, and what it carries is then the template author's responsibility.
 
 A template written before escaping arrived may still carry `?html`, and keeps working: the built-in is dropped as the template is parsed, which leaves the value to be escaped on its way out, so the message is what it always was. The one use that cannot be dropped is where a further built-in reads the escaped value, as in `${variable?html?upper_case}`. That is refused when the notification is rendered, and the error names the edit: write `?esc?markup_string` in place of `?html` and close the expression with `?no_esc`. A template in that state is named in the log at startup, with the same reason, so it does not have to be found through a notification that failed to arrive. The Subject is plain text and its values are inserted as they are.
 

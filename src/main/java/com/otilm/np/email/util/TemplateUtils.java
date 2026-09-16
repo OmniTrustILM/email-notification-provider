@@ -34,6 +34,9 @@ public class TemplateUtils {
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final String LEGACY_ESCAPE = "html";
+    private static final String LEGACY_ESCAPE_EDIT = " A further built-in reads the value ?html escaped there."
+            + " Write ?esc?markup_string in its place and close the expression with ?no_esc, or drop the escaping and"
+            + " let the value be escaped on its way out.";
 
     private TemplateUtils() {
     }
@@ -121,7 +124,7 @@ public class TemplateUtils {
             logger.error("Failed to parse the {} template: event={}, resource={}, error={}",
                     templateLabel, request.getEvent(), request.getResource(), e.getMessage());
             throw new NotificationException("Failed to parse the " + templateLabel + " template: " + e.getMessage()
-                    + legacyEscapingHint(templateSource, outputFormat), e);
+                    + legacyEscapingHint(e), e);
         }
 
         // Process the template with the data model
@@ -148,7 +151,7 @@ public class TemplateUtils {
             return Optional.empty();
         } catch (IOException e) {
             return Optional
-                    .of(e.getMessage() + legacyEscapingHint(templateSource, HTMLOutputFormat.INSTANCE));
+                    .of(e.getMessage() + legacyEscapingHint(e));
         }
     }
 
@@ -175,11 +178,14 @@ public class TemplateUtils {
             try {
                 return new Template(templateLabel, new StringReader(source), cfg);
             } catch (ParseException e) {
-                String withoutLegacyEscape = withoutLegacyEscapeAt(source, e);
-                if (withoutLegacyEscape == null) {
+                int name = legacyEscapeAt(source, e);
+                if (name < 0) {
                     throw e;
                 }
-                source = withoutLegacyEscape;
+                if (mayBeReadOn(source, name + LEGACY_ESCAPE.length())) {
+                    throw new UnsupportedLegacyEscapeException(e);
+                }
+                source = withoutLegacyEscapeAt(source, name);
             }
         }
     }
@@ -189,21 +195,28 @@ public class TemplateUtils {
      * when the escaped value may be read by a further built-in: dropping it there would hand that built-in the raw
      * text instead. A closing parenthesis counts as may-be-read, since what encloses the built-in could apply one.
      */
-    private static String withoutLegacyEscapeAt(String source, ParseException failure) {
+    /** Where the legacy escaping built-in the parser refused begins, or -1 when that is not what it refused. */
+    private static int legacyEscapeAt(String source, ParseException failure) {
         int name = offsetOf(source, failure.getLineNumber(), failure.getColumnNumber());
         if (name < 1 || !source.startsWith(LEGACY_ESCAPE, name)) {
-            return null;
+            return -1;
         }
         int question = skipWhitespaceBack(source, name - 1);
-        if (question < 0 || source.charAt(question) != '?') {
-            return null;
-        }
-        int after = name + LEGACY_ESCAPE.length();
-        int next = skipWhitespace(source, after);
-        if (next < source.length() && (source.charAt(next) == '?' || source.charAt(next) == ')')) {
-            return null;
-        }
-        return source.substring(0, question) + source.substring(after);
+        return question >= 0 && source.charAt(question) == '?' ? name : -1;
+    }
+
+    /**
+     * Whether the escaped value may be read by a further built-in, which is when it cannot be dropped: doing so would
+     * hand that built-in the raw text. A closing parenthesis counts, since what encloses the built-in could apply one.
+     */
+    private static boolean mayBeReadOn(String source, int afterName) {
+        int next = skipWhitespace(source, afterName);
+        return next < source.length() && (source.charAt(next) == '?' || source.charAt(next) == ')');
+    }
+
+    private static String withoutLegacyEscapeAt(String source, int name) {
+        int question = skipWhitespaceBack(source, name - 1);
+        return source.substring(0, question) + source.substring(name + LEGACY_ESCAPE.length());
     }
 
     private static int skipWhitespace(String source, int from) {
@@ -238,16 +251,19 @@ public class TemplateUtils {
 
     /**
      * FreeMarker refuses the legacy {@code ?html} once values are escaped for it, and says so in terms of its own
-     * built-ins. What reaches here is the one use that cannot be dropped, where a further built-in reads the escaped
-     * value, so the edit is named for the operator.
+     * built-ins. The edit is named only when that is what failed, so a template that merely carries the text
+     * somewhere, in a URL for one, is not sent to alter it.
      */
-    private static String legacyEscapingHint(String templateSource, OutputFormat outputFormat) {
-        if (outputFormat == HTMLOutputFormat.INSTANCE && templateSource.contains("?html")) {
-            return " A further built-in reads the value ?html escaped there. Write ?esc?markup_string in its place"
-                    + " and close the expression with ?no_esc, or drop the escaping and let the value be escaped on"
-                    + " its way out.";
+    private static String legacyEscapingHint(IOException failure) {
+        return failure instanceof UnsupportedLegacyEscapeException ? LEGACY_ESCAPE_EDIT : "";
+    }
+
+    /** The one legacy escape that cannot be dropped, so that the edit is named for that failure and no other. */
+    private static final class UnsupportedLegacyEscapeException extends IOException {
+
+        private UnsupportedLegacyEscapeException(ParseException refusal) {
+            super(refusal.getMessage(), refusal);
         }
-        return "";
     }
 
     /**

@@ -90,6 +90,17 @@ class CommentBodyTemplateUtilsTest {
     }
 
     @Test
+    void aBrokenTemplateIsNotSentToRemoveAnUnrelatedQueryString() {
+        NotificationException refused = Assertions
+                .assertThrows(NotificationException.class, () -> TemplateUtils
+                        .renderHtml("email content",
+                                "<a href=\"https://example.test/view?html=true\">${unclosed</a>", request));
+
+        Assertions.assertFalse(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
+        Assertions.assertFalse(refused.getMessage().contains("remove"), refused.getMessage());
+    }
+
+    @Test
     void aLegacyEscapeWrittenWithSpacesIsDroppedLikeAnyOther() {
         Assertions
                 .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
