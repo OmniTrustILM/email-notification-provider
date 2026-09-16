@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Optional;
 
 public class TemplateUtils {
 
@@ -108,13 +109,7 @@ public class TemplateUtils {
             throw new NotificationException("Failed to build the " + templateLabel + " template data model (" + e.getClass().getSimpleName() + ")");
         }
 
-        // Prepare FreeMarker configuration
-        Configuration cfg = new Configuration(Configuration.VERSION_2_3_33);
-        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-        cfg.setDefaultEncoding("UTF-8");
-        cfg.setLogTemplateExceptions(false);
-        cfg.setWrapUncheckedExceptions(true);
-        cfg.setOutputFormat(outputFormat);
+        Configuration cfg = configuration(outputFormat);
 
         // Create template from the HTML string
         Template template;
@@ -141,6 +136,30 @@ public class TemplateUtils {
         }
 
         return stringWriter.toString();
+    }
+
+    /**
+     * Why this content template will not render, for a caller checking one that is already stored: the message the
+     * operator would be given when a notification reaches it, or empty when it renders.
+     */
+    public static Optional<String> contentTemplateFailure(String templateSource) {
+        try {
+            parse("email content", templateSource, configuration(HTMLOutputFormat.INSTANCE));
+            return Optional.empty();
+        } catch (IOException e) {
+            return Optional
+                    .of(e.getMessage() + legacyEscapingHint(templateSource, HTMLOutputFormat.INSTANCE));
+        }
+    }
+
+    private static Configuration configuration(OutputFormat outputFormat) {
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_33);
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setDefaultEncoding("UTF-8");
+        cfg.setLogTemplateExceptions(false);
+        cfg.setWrapUncheckedExceptions(true);
+        cfg.setOutputFormat(outputFormat);
+        return cfg;
     }
 
     /**
