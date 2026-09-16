@@ -190,11 +190,6 @@ public class TemplateUtils {
         }
     }
 
-    /**
-     * The source without the legacy escaping built-in the parser refused, or null when that is not what it refused, or
-     * when the escaped value may be read by a further built-in: dropping it there would hand that built-in the raw
-     * text instead. A closing parenthesis counts as may-be-read, since what encloses the built-in could apply one.
-     */
     /** Where the legacy escaping built-in the parser refused begins, or -1 when that is not what it refused. */
     private static int legacyEscapeAt(String source, ParseException failure) {
         int name = offsetOf(source, failure.getLineNumber(), failure.getColumnNumber());
