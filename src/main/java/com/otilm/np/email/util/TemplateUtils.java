@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import freemarker.core.HTMLOutputFormat;
 import freemarker.core.OutputFormat;
+import freemarker.core.ParseException;
 import freemarker.core.PlainTextOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -20,7 +21,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class TemplateUtils {
 
@@ -32,13 +32,7 @@ public class TemplateUtils {
      * unserializable placeholder.
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
-    /**
-     * The legacy escaping built-in where it is the last thing an interpolation does. Only there can it be dropped
-     * without knowing where the expression begins: nothing else reads its result, and escaping on the way out gives
-     * the same characters it gave. Text that merely looks like it, a URL's {@code ?html=true} for one, is not followed
-     * by the closing brace and is left alone.
-     */
-    private static final Pattern TERMINAL_LEGACY_ESCAPE = Pattern.compile("\\?html(?=\\s*})");
+    private static final String LEGACY_ESCAPE = "html";
 
     private TemplateUtils() {
     }
@@ -78,8 +72,7 @@ public class TemplateUtils {
      */
     public static String renderHtml(String templateLabel, String templateSource,
             NotificationProviderNotifyRequestDto request) {
-        return render(templateLabel, TERMINAL_LEGACY_ESCAPE.matcher(templateSource).replaceAll(""), request,
-                HTMLOutputFormat.INSTANCE);
+        return render(templateLabel, templateSource, request, HTMLOutputFormat.INSTANCE);
     }
 
     /** Renders a plain-text template, such as the subject line; values are inserted as they are. */
@@ -126,7 +119,7 @@ public class TemplateUtils {
         // Create template from the HTML string
         Template template;
         try {
-            template = new Template(templateLabel, new StringReader(templateSource), cfg);
+            template = parse(templateLabel, templateSource, cfg);
         } catch (IOException e) {
             // Parsing happens before the data model is bound, so this message describes the
             // operator's own template only and cannot quote payload values.
@@ -151,14 +144,71 @@ public class TemplateUtils {
     }
 
     /**
+     * Parses the template, dropping the legacy {@code ?html} built-in wherever a template predating the escaping still
+     * carries it. The parser reports where it refused, so each one is removed at a position FreeMarker itself named:
+     * text that merely looks like the built-in, a URL's {@code ?html=true} for one, is never touched. Dropping it
+     * leaves the value to be escaped on the way out, which is what it escaped for, so the template renders what it
+     * rendered before. Each pass shortens the source, so this ends.
+     */
+    private static Template parse(String templateLabel, String templateSource, Configuration cfg) throws IOException {
+        String source = templateSource;
+        while (true) {
+            try {
+                return new Template(templateLabel, new StringReader(source), cfg);
+            } catch (ParseException e) {
+                String withoutLegacyEscape = withoutLegacyEscapeAt(source, e);
+                if (withoutLegacyEscape == null) {
+                    throw e;
+                }
+                source = withoutLegacyEscape;
+            }
+        }
+    }
+
+    /**
+     * The source without the legacy escaping built-in the parser refused, or null when that is not what it refused, or
+     * when another built-in reads the escaped value: dropping it there would hand that built-in the raw text instead.
+     */
+    private static String withoutLegacyEscapeAt(String source, ParseException failure) {
+        int name = offsetOf(source, failure.getLineNumber(), failure.getColumnNumber());
+        if (name < 1 || !source.startsWith(LEGACY_ESCAPE, name) || source.charAt(name - 1) != '?') {
+            return null;
+        }
+        int after = name + LEGACY_ESCAPE.length();
+        int next = after;
+        while (next < source.length() && Character.isWhitespace(source.charAt(next))) {
+            next++;
+        }
+        if (next < source.length() && source.charAt(next) == '?') {
+            return null;
+        }
+        return source.substring(0, name - 1) + source.substring(after);
+    }
+
+    /** Where the parser's line and column land in the source, or -1 when they name no position in it. */
+    private static int offsetOf(String source, int line, int column) {
+        int offset = 0;
+        for (int passed = 1; passed < line; passed++) {
+            int newline = source.indexOf('\n', offset);
+            if (newline < 0) {
+                return -1;
+            }
+            offset = newline + 1;
+        }
+        int at = offset + column - 1;
+        return at <= source.length() ? at : -1;
+    }
+
+    /**
      * FreeMarker refuses the legacy {@code ?html} once values are escaped for it, and says so in terms of its own
-     * built-ins. What reaches here is a use that cannot simply be dropped - inside a macro call, before another
-     * built-in, or assigned to a variable - so the edit is named for the operator.
+     * built-ins. What reaches here is the one use that cannot be dropped, where a further built-in reads the escaped
+     * value, so the edit is named for the operator.
      */
     private static String legacyEscapingHint(String templateSource, OutputFormat outputFormat) {
         if (outputFormat == HTMLOutputFormat.INSTANCE && templateSource.contains("?html")) {
-            return " Values are escaped on their way into the content template, so remove ?html from it;"
-                    + " a value that has to stay markup takes ?no_esc instead.";
+            return " A further built-in reads the value ?html escaped there. Write ?esc?markup_string in its place"
+                    + " and close the expression with ?no_esc, or drop the escaping and let the value be escaped on"
+                    + " its way out.";
         }
         return "";
     }

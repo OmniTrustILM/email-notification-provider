@@ -60,7 +60,7 @@ Values inserted into the Content Template are HTML-escaped, so text written by a
 
 Put a value in element text, or in a quoted attribute value such as `alt="${variable}"`. Escaping does not make a value safe anywhere else, so never place one in an unquoted attribute, inside a `<script>` or `<style>` block, in an event handler such as `onclick`, or where it decides a URL's scheme: in those positions a value stays executable however it is escaped. A value that has to be delivered as markup opts out with `${variable?no_esc}`, and what it carries is then the template author's responsibility.
 
-A template written before escaping arrived may still carry `?html`. Where it escaped a value on its own, as `${variable?html}`, the template keeps working and delivers exactly what it delivered before. Any other use of that built-in, inside a macro call, before a further built-in, or assigned to a variable, is refused when the notification is rendered, and the error names the edit: remove the `?html`. The Subject is plain text and its values are inserted as they are.
+A template written before escaping arrived may still carry `?html`, and keeps working: the built-in is dropped as the template is parsed, which leaves the value to be escaped on its way out, so the message is what it always was. The one use that cannot be dropped is where a further built-in reads the escaped value, as in `${variable?html?upper_case}`. That is refused when the notification is rendered, and the error names the edit: write `?esc?markup_string` in place of `?html` and close the expression with `?no_esc`. The Subject is plain text and its values are inserted as they are.
 
 The following is an example of the Content Template with variables:
 ```htlm
