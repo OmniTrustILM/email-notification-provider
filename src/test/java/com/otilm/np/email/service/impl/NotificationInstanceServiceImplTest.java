@@ -131,6 +131,44 @@ class NotificationInstanceServiceImplTest {
     }
 
     @Test
+    void createNotificationInstance_refusesAContentTemplateThatWillNotRender() {
+        when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.empty());
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        setContentTemplate(request, "<div>${notificationData.body?html?upper_case}</div>");
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.createNotificationInstance(request));
+
+        assertTrue(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void updateNotificationInstance_refusesAContentTemplateThatWillNotRender() {
+        UUID uuid = UUID.randomUUID();
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(buildPersistedInstance(uuid)));
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        setContentTemplate(request, "<div>${unclosed</div>");
+
+        assertThrows(ValidationException.class, () -> service.updateNotificationInstance(uuid, request));
+
+        verify(repository, never()).save(any());
+    }
+
+    private static void setContentTemplate(NotificationProviderInstanceRequestDto request, String template) {
+        CodeBlockAttributeContentV2 codeContent = new CodeBlockAttributeContentV2();
+        codeContent
+                .setData(new CodeBlockAttributeContentData(ProgrammingLanguageEnum.HTML,
+                        Base64.getEncoder().encodeToString(template.getBytes())));
+        request
+                .getAttributes()
+                .stream()
+                .map(RequestAttributeV2.class::cast)
+                .filter(attribute -> AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME.equals(attribute.getName()))
+                .forEach(attribute -> attribute.setContent(List.<BaseAttributeContentV2<?>>of(codeContent)));
+    }
+
+    @Test
     void createNotificationInstance_throwsWhenNameExists() {
         NotificationProviderInstanceRequestDto request = buildInstanceRequest();
         when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.of(buildPersistedInstance(UUID.randomUUID())));
