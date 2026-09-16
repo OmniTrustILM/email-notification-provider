@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TemplateUtils {
 
@@ -33,9 +31,6 @@ public class TemplateUtils {
      * unserializable placeholder.
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
-    private static final Pattern LEGACY_HTML_ESCAPE = Pattern.compile("\\?html\\b");
-    /** A FreeMarker interpolation or directive tag, where a {@code ?html} is a built-in rather than template text. */
-    private static final Pattern TEMPLATE_EXPRESSION = Pattern.compile("\\$\\{[^}]*}|<#[^>]*>|\\[#[^\\]]*]");
 
     private TemplateUtils() {
     }
@@ -70,49 +65,12 @@ public class TemplateUtils {
     /**
      * Renders the HTML content template. Every interpolated value is HTML-escaped, so text a user authored - a
      * comment body - arrives as text and never as live markup; a template that must insert trusted markup says so with
-     * {@code ?no_esc}.
+     * {@code ?no_esc}. A template written before escaping arrived, carrying {@code ?html}, is refused with the edit it
+     * needs.
      */
     public static String renderHtml(String templateLabel, String templateSource,
             NotificationProviderNotifyRequestDto request) {
-        return render(templateLabel, rewriteLegacyHtmlEscape(templateSource), request, HTMLOutputFormat.INSTANCE);
-    }
-
-    /**
-     * FreeMarker refuses the legacy {@code ?html} once values are escaped for it; a template written before that keeps
-     * rendering, escaped once, by reading the built-in as {@code ?esc}. Only built-ins are rewritten: a {@code ?html}
-     * in template text, such as a URL's query string, or inside a quoted literal of an expression, stays as it is.
-     */
-    static String rewriteLegacyHtmlEscape(String templateSource) {
-        return TEMPLATE_EXPRESSION
-                .matcher(templateSource)
-                .replaceAll(expression -> Matcher.quoteReplacement(rewriteOutsideLiterals(expression.group())));
-    }
-
-    private static String rewriteOutsideLiterals(String expression) {
-        StringBuilder rewritten = new StringBuilder();
-        int segmentStart = 0;
-        char quote = 0;
-        boolean escaped = false;
-        for (int i = 0; i < expression.length(); i++) {
-            char c = expression.charAt(i);
-            if (quote == 0) {
-                if (c == '"' || c == '\'') {
-                    rewritten.append(LEGACY_HTML_ESCAPE.matcher(expression.substring(segmentStart, i)).replaceAll("?esc"));
-                    segmentStart = i;
-                    quote = c;
-                }
-            } else if (escaped) {
-                escaped = false;
-            } else if (c == '\\') {
-                escaped = true;
-            } else if (c == quote) {
-                rewritten.append(expression, segmentStart, i + 1);
-                segmentStart = i + 1;
-                quote = 0;
-            }
-        }
-        rewritten.append(LEGACY_HTML_ESCAPE.matcher(expression.substring(segmentStart)).replaceAll("?esc"));
-        return rewritten.toString();
+        return render(templateLabel, templateSource, request, HTMLOutputFormat.INSTANCE);
     }
 
     /** Renders a plain-text template, such as the subject line; values are inserted as they are. */
@@ -165,7 +123,8 @@ public class TemplateUtils {
             // operator's own template only and cannot quote payload values.
             logger.error("Failed to parse the {} template: event={}, resource={}, error={}",
                     templateLabel, request.getEvent(), request.getResource(), e.getMessage());
-            throw new NotificationException("Failed to parse the " + templateLabel + " template: " + e.getMessage(), e);
+            throw new NotificationException("Failed to parse the " + templateLabel + " template: " + e.getMessage()
+                    + legacyEscapingHint(templateSource, outputFormat), e);
         }
 
         // Process the template with the data model
@@ -180,6 +139,18 @@ public class TemplateUtils {
         }
 
         return stringWriter.toString();
+    }
+
+    /**
+     * FreeMarker refuses the legacy {@code ?html} once values are escaped for it, and says so in terms of its own
+     * built-ins. A template carrying that built-in predates the escaping and needs one edit, which this names.
+     */
+    private static String legacyEscapingHint(String templateSource, OutputFormat outputFormat) {
+        if (outputFormat == HTMLOutputFormat.INSTANCE && templateSource.contains("?html")) {
+            return " Values are escaped on their way into the content template, so remove ?html from it;"
+                    + " a value that has to stay markup takes ?no_esc instead.";
+        }
+        return "";
     }
 
     /**

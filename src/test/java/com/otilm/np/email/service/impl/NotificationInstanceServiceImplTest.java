@@ -17,6 +17,7 @@ import com.otilm.api.model.common.attribute.v3.content.BaseAttributeContentV3;
 import com.otilm.api.model.common.attribute.v3.content.StringAttributeContentV3;
 import com.otilm.api.model.connector.notification.NotificationProviderInstanceDto;
 import com.otilm.api.model.connector.notification.NotificationProviderInstanceRequestDto;
+import com.otilm.api.model.common.events.data.CertificateStatusChangedEventData;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
@@ -65,6 +66,7 @@ class NotificationInstanceServiceImplTest {
     private static final String EMAIL_FROM = "from@example.com";
     private static final String SUBJECT = "Test subject";
     private static final String TEMPLATE_PLAINTEXT = "<p>Hello</p>";
+    private static final String HOSTILE_VALUE = "CN=<img src=x onerror=alert(1)>";
     private static final String TEMPLATE_BASE64 = Base64.getEncoder().encodeToString(TEMPLATE_PLAINTEXT.getBytes());
 
     @Mock
@@ -225,6 +227,38 @@ class NotificationInstanceServiceImplTest {
                 ? new String[0]
                 : new String[]{mimeMessage.getAllRecipients()[0].toString()});
         assertEquals(SUBJECT, mimeMessage.getSubject());
+    }
+
+    @Test
+    void sendNotification_escapesTheContentAndLeavesTheSubjectVerbatim() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        instance
+                .setContentTemplate(Base64
+                        .getEncoder()
+                        .encodeToString("<div>${notificationData.subjectDn}</div>".getBytes()));
+        instance.setSubject("Certificate ${notificationData.subjectDn}");
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        MimeMessage mimeMessage = new MimeMessage((jakarta.mail.Session) null);
+        when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setName("R1");
+        recipient.setEmail("to@example.com");
+
+        NotificationProviderNotifyRequestDto request = buildNotifyRequest(List.of(recipient));
+        CertificateStatusChangedEventData data = new CertificateStatusChangedEventData();
+        data.setSubjectDn(HOSTILE_VALUE);
+        request.setNotificationData(data);
+
+        service.sendNotification(uuid, request);
+
+        verify(emailSender, times(1)).send(mimeMessage);
+        String body = mimeMessage.getContent().toString();
+        assertTrue(body.contains("&lt;img src=x onerror=alert(1)&gt;"), body);
+        assertFalse(body.contains("<img"), body);
+        assertEquals("Certificate " + HOSTILE_VALUE, mimeMessage.getSubject());
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.otilm.np.email.util;
 
 import com.otilm.api.model.common.events.data.CommentEventData;
+import com.otilm.np.email.exception.NotificationException;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
@@ -11,7 +12,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class CommentBodyTemplateUtilsTest extends BaseSpringBootTest {
+class CommentBodyTemplateUtilsTest {
 
     private static final String HOSTILE_BODY = "<b>bold</b> and <img src=x onerror=alert(1)> & \"quotes\"";
 
@@ -51,24 +52,23 @@ class CommentBodyTemplateUtilsTest extends BaseSpringBootTest {
     }
 
     @Test
-    void explicitHtmlEscapingInATemplateIsNotAppliedTwice() {
-        String html = TemplateUtils.renderHtml("email content", "<div>${notificationData.body?html}</div>", request);
+    void aTemplateCarryingTheLegacyBuiltInIsRefusedWithTheEditItNeeds() {
+        NotificationException refused = Assertions
+                .assertThrows(NotificationException.class, () -> TemplateUtils
+                        .renderHtml("email content", "<div>${notificationData.body?html}</div>", request));
 
-        Assertions.assertTrue(html.contains("&lt;b&gt;bold&lt;/b&gt;"), html);
-        Assertions.assertFalse(html.contains("&amp;lt;"), html);
+        Assertions.assertTrue(refused.getMessage().contains("?html"), refused.getMessage());
+        Assertions.assertTrue(refused.getMessage().contains("?no_esc"), refused.getMessage());
     }
 
     @Test
-    void onlyTheLegacyBuiltInIsRewrittenNeverTemplateText() {
-        Assertions
-                .assertEquals("${notificationData.body?esc} <#if x?esc?has_content>y</#if>",
-                        TemplateUtils.rewriteLegacyHtmlEscape("${notificationData.body?html} <#if x?html?has_content>y</#if>"));
-        String urlInTextAndLiteral = "<a href=\"https://example.test/view?html=true\">${\"https://example.test/view?html=true\"}</a>";
-        Assertions.assertEquals(urlInTextAndLiteral, TemplateUtils.rewriteLegacyHtmlEscape(urlInTextAndLiteral));
+    void templateTextIsDeliveredAsWritten() {
+        String html = TemplateUtils
+                .renderHtml("email content",
+                        "<a href=\"https://example.test/view?html=true\">${notificationData.objectName}</a>", request);
 
-        String html = TemplateUtils.renderHtml("email content",
-                "<a href=\"https://example.test/view?html=true\">${notificationData.objectName}</a>", request);
         Assertions.assertTrue(html.contains("view?html=true"), html);
+        Assertions.assertTrue(html.contains("tst-ra-profile"), html);
     }
 
     @Test

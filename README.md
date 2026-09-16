@@ -56,7 +56,11 @@ Configuring instance of this Email Notification Provider requires to provide the
 Subject and Content Template attributes support variables that are replaced during notification processing. Variables are replaced with the data coming from the request for notification.
 The variables are written in format `${variable}`.
 
-Values inserted into the Content Template are HTML-escaped, so text written by a user - a comment body, for instance - is delivered as text and never as live markup. A template that has to insert trusted markup from a value opts out with `${variable?no_esc}`; a template that already escaped a value with `?html` keeps working and escapes it once. Insert values into element text or into quoted attribute values, as in `alt="${variable}"`; escaping cannot protect an unquoted attribute, where a space in the value starts a new attribute. The Subject is plain text and its values are inserted as they are.
+Values inserted into the Content Template are HTML-escaped, so text written by a user - a comment body, for instance - is delivered as text and never as live markup.
+
+Put a value in element text, or in a quoted attribute value such as `alt="${variable}"`. Escaping does not make a value safe anywhere else, so never place one in an unquoted attribute, inside a `<script>` or `<style>` block, in an event handler such as `onclick`, or where it decides a URL's scheme: in those positions a value stays executable however it is escaped. A value that has to be delivered as markup opts out with `${variable?no_esc}`, and what it carries is then the template author's responsibility.
+
+A template written before escaping arrived may still carry `?html`. FreeMarker does not accept that built-in once values are escaped for it, so the `?html` has to go; the error names the edit. The Subject is plain text and its values are inserted as they are.
 
 The following is an example of the Content Template with variables:
 ```htlm
@@ -71,10 +75,9 @@ The following is an example of the Content Template with variables:
   </ul>
 </p>
 
-<button onclick="location.href='https://yourdomain.com/administrator/#/certificates/detail/${notificationData.certificateUuid}'"
-        type="button">
-  Go To Certificate
-</button>
+<p>
+  <a href="https://yourdomain.com/administrator/#/certificates/detail/${notificationData.certificateUuid}">Go To Certificate</a>
+</p>
 ```
 
 The variables will be replaced with values in the notification request, for example:
@@ -114,10 +117,9 @@ Will parse the final notification Content Template to be:
   </ul>
 </p>
 
-<button onclick="location.href='https://localhost/administrator/#/certificates/detail/7de49ef9-8244-4e8f-95b8-82205ae0ad48'"
-        type="button">
-  Go To Certificate
-</button>
+<p>
+  <a href="https://localhost/administrator/#/certificates/detail/7de49ef9-8244-4e8f-95b8-82205ae0ad48">Go To Certificate</a>
+</p>
 ```
 
 ## Recipients
