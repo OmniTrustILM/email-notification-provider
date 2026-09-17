@@ -50,7 +50,7 @@ class TemplateUtilsErrorTest {
     @Test
     void malformedTemplateThrowsCreationError() {
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate(TEMPLATE_LABEL, "${unclosed", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${unclosed", request()));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertNoPayloadExposure(ex);
     }
@@ -58,7 +58,7 @@ class TemplateUtilsErrorTest {
     @Test
     void unresolvedReferenceThrowsProcessingError() {
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate(TEMPLATE_LABEL, "${totallyMissingVar}", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${totallyMissingVar}", request()));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertTrue(ex.getMessage().contains("line"), "the rendering failure must stay locatable in the template");
         assertNoPayloadExposure(ex);
@@ -68,7 +68,7 @@ class TemplateUtilsErrorTest {
     void renderingFailureLogsTemplateAndEventIdentifiers() {
         NotificationProviderNotifyRequestDto request = request();
         assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate(TEMPLATE_LABEL, "${totallyMissingVar}", request));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${totallyMissingVar}", request));
 
         List<String> errorLogs = formattedLogs();
         assertFalse(errorLogs.isEmpty());
@@ -94,7 +94,7 @@ class TemplateUtilsErrorTest {
         });
 
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate(TEMPLATE_LABEL, "irrelevant", request));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "irrelevant", request));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertNoPayloadExposure(ex);
     }
@@ -106,7 +106,7 @@ class TemplateUtilsErrorTest {
     @Test
     void coercionFailureExposesNoPayloadValue() {
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate(TEMPLATE_LABEL,
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
                         "${notificationData.credential?number}", request()));
 
         assertNoPayloadExposure(ex);
@@ -117,7 +117,7 @@ class TemplateUtilsErrorTest {
     @Test
     void dateCoercionFailureExposesNoPayloadValue() {
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.processFreeMarkerTemplate(TEMPLATE_LABEL,
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
                         "${notificationData.credential?datetime}", request()));
 
         assertNoPayloadExposure(ex);

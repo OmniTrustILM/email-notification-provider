@@ -101,8 +101,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
                 AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
-        final String contentTemplate = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContentV2.class).getData().getCode();
+        final String contentTemplate = validatedContentTemplate(request);
 
         NotificationInstance notificationInstance = new NotificationInstance();
         notificationInstance.setUuid(UUID.randomUUID().toString());
@@ -115,6 +114,28 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         notificationInstanceRepository.save(notificationInstance);
 
         return notificationInstance.mapToDto();
+    }
+
+    /**
+     * The content template the request carries, refused here when it will not render. An operator editing a template
+     * is told while they have it in front of them, rather than by a notification that failed to reach somebody.
+     */
+    private String validatedContentTemplate(NotificationProviderInstanceRequestDto request) {
+        String contentTemplate = AttributeDefinitionUtils
+                .getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME,
+                        request.getAttributes(), CodeBlockAttributeContentV2.class)
+                .getData()
+                .getCode();
+        String decoded;
+        try {
+            decoded = new String(Base64.getDecoder().decode(contentTemplate));
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException(List.of(ValidationError.create("The content template could not be read.")));
+        }
+        TemplateUtils.contentTemplateFailure(decoded).ifPresent(reason -> {
+            throw new ValidationException(List.of(ValidationError.create(reason)));
+        });
+        return contentTemplate;
     }
 
     @Override
@@ -136,8 +157,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
                 AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
 
-        final String contentTemplate = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME, request.getAttributes(), CodeBlockAttributeContentV2.class).getData().getCode();
+        final String contentTemplate = validatedContentTemplate(request);
 
         notificationInstance.setAttributes(AttributeDefinitionUtils.mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
         notificationInstance.setEmailFrom(emailFrom);
@@ -176,8 +196,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         String htmlMsg = notificationInstance.getContentTemplate();
         String Subject = notificationInstance.getSubject();
 
-        final String substitutedHtmlMsg = TemplateUtils.processFreeMarkerTemplate("email content", htmlMsg, request);
-        final String substitutedSubject = TemplateUtils.processFreeMarkerTemplate("email subject", Subject, request);
+        final String substitutedHtmlMsg = TemplateUtils.renderHtml("email content", htmlMsg, request);
+        final String substitutedSubject = TemplateUtils.renderPlainText("email subject", Subject, request);
 
         logger.debug("Resolving recipients from request input: {}", request.getRecipients());
         final String[] recipients = getRecipients(request.getRecipients());

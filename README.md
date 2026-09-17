@@ -54,7 +54,26 @@ Configuring instance of this Email Notification Provider requires to provide the
 | Content Template     | HTML template to be used to send information in email  | `CODEBLOCK`  |
 
 Subject and Content Template attributes support variables that are replaced during notification processing. Variables are replaced with the data coming from the request for notification.
-The varaibles are written in format `${variable}`.
+The variables are written in format `${variable}`.
+
+Values inserted into the Content Template are HTML-escaped, so text written by a user - a comment body, for instance - is delivered as text and never as live markup.
+
+Put a value in element text, or in a quoted value of an inert attribute such as `alt`, `title` or `class`. Those are the two positions HTML escaping makes safe, and it makes a value safe in no other:
+
+| Position | Why escaping is not enough |
+|----------|----------------------------|
+| An unquoted attribute | A space in the value starts a new attribute |
+| An event handler, `onclick` and the like | The browser decodes the entities, then runs what is left as JavaScript |
+| Inside `<script>` or `<style>` | The content is script or style, not HTML, so entities are not decoded and the value is read as code |
+| A URL-bearing attribute, `href` or `src` | Escaping does not restrict the scheme, so a value may supply `javascript:` or point anywhere |
+
+A value belongs in those positions only after it has been checked for that position: a URL accepted only with a scheme you allow, and script or style never assembled from a value at all. Where a template must build a link, write the scheme and host itself and interpolate only the part that cannot change the target, as the example below does with a UUID.
+
+A value that has to be delivered as markup opts out with `${variable?no_esc}`, and what it carries is then the template author's responsibility.
+
+A template written before escaping arrived may still carry `?html`, which FreeMarker does not accept where values are escaped for it. Such a template is refused rather than adjusted, because what its escaped value is used for cannot be seen where the built-in is written: a template that compares or measures the escaped text would quietly behave differently if the built-in were simply removed.
+
+The refusal happens where it can be acted on. Saving a notification instance whose content template carries `?html` is rejected with the edit; every stored template that will not render is named in the log at startup; and a notification that reaches one reports the same thing. The edit is to remove `?html` and let the value be escaped on its way out, `?no_esc` where a value has to stay markup, and `?esc?markup_string` with `?no_esc` closing the expression where the escaped text is read further on.
 
 The following is an example of the Content Template with variables:
 ```htlm
@@ -69,10 +88,9 @@ The following is an example of the Content Template with variables:
   </ul>
 </p>
 
-<button onclick="location.href='https://yourdomain.com/administrator/#/certificates/detail/${notificationData.certificateUuid}'"
-        type="button">
-  Go To Certificate
-</button>
+<p>
+  <a href="https://yourdomain.com/administrator/#/certificates/detail/${notificationData.certificateUuid}">Go To Certificate</a>
+</p>
 ```
 
 The variables will be replaced with values in the notification request, for example:
@@ -112,10 +130,9 @@ Will parse the final notification Content Template to be:
   </ul>
 </p>
 
-<button onclick="location.href='https://localhost/administrator/#/certificates/detail/7de49ef9-8244-4e8f-95b8-82205ae0ad48'"
-        type="button">
-  Go To Certificate
-</button>
+<p>
+  <a href="https://localhost/administrator/#/certificates/detail/7de49ef9-8244-4e8f-95b8-82205ae0ad48">Go To Certificate</a>
+</p>
 ```
 
 ## Recipients
