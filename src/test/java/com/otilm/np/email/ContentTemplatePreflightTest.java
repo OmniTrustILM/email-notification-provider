@@ -36,10 +36,11 @@ class ContentTemplatePreflightTest {
 
         List<String> reported = new ContentTemplatePreflight(repository).unrenderableTemplates();
 
-        Assertions.assertEquals(2, reported.size(), reported.toString());
-        Assertions.assertTrue(reported.get(0).startsWith("'escape read on'"), reported.toString());
-        Assertions.assertTrue(reported.get(0).contains("?esc?markup_string"), reported.toString());
-        Assertions.assertTrue(reported.get(1).startsWith("'malformed'"), reported.toString());
+        Assertions.assertEquals(3, reported.size(), reported.toString());
+        Assertions.assertTrue(reported.get(0).startsWith("'escaped by hand'"), reported.toString());
+        Assertions.assertTrue(reported.get(0).contains("remove ?html"), reported.toString());
+        Assertions.assertTrue(reported.get(1).startsWith("'escape read on'"), reported.toString());
+        Assertions.assertTrue(reported.get(2).startsWith("'malformed'"), reported.toString());
     }
 
     @Test

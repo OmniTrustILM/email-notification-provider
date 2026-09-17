@@ -34,9 +34,10 @@ public class TemplateUtils {
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final String LEGACY_ESCAPE = "html";
-    private static final String LEGACY_ESCAPE_EDIT = " A further built-in reads the value ?html escaped there."
-            + " Write ?esc?markup_string in its place and close the expression with ?no_esc, or drop the escaping and"
-            + " let the value be escaped on its way out.";
+    private static final String LEGACY_ESCAPE_EDIT = " Values are escaped on their way into the content template,"
+            + " so remove ?html from it. A value that has to stay markup takes ?no_esc instead, and one whose escaped"
+            + " text is read further on, compared or measured, takes ?esc?markup_string with ?no_esc closing the"
+            + " expression.";
 
     private TemplateUtils() {
     }
@@ -71,8 +72,8 @@ public class TemplateUtils {
     /**
      * Renders the HTML content template. Every interpolated value is HTML-escaped, so text a user authored - a
      * comment body - arrives as text and never as live markup; a template that must insert trusted markup says so with
-     * {@code ?no_esc}. A template written before escaping arrived keeps working where it wrote {@code ${value?html}},
-     * which renders exactly as it did; any other use of that built-in is refused with the edit it needs.
+     * {@code ?no_esc}. A template written before escaping arrived, which escapes with {@code ?html} itself, is refused
+     * with the edit it needs: FreeMarker does not accept that built-in where values are escaped for it.
      */
     public static String renderHtml(String templateLabel, String templateSource,
             NotificationProviderNotifyRequestDto request) {
@@ -169,27 +170,15 @@ public class TemplateUtils {
     }
 
     /**
-     * Parses the template, dropping the legacy {@code ?html} built-in wherever a template predating the escaping still
-     * carries it. The parser reports where it refused, so each one is removed at a position FreeMarker itself named:
-     * text that merely looks like the built-in, a URL's {@code ?html=true} for one, is never touched. Dropping it
-     * leaves the value to be escaped on the way out, which is what it escaped for, so the template renders what it
-     * rendered before. Each pass shortens the source, so this ends.
+     * Parses the template, refusing the legacy {@code ?html} built-in in terms the operator can act on. FreeMarker
+     * reports where it refused, which is checked against the source so that only that failure is answered with the
+     * edit and an unrelated syntax error is reported as it stands.
      */
     private static Template parse(String templateLabel, String templateSource, Configuration cfg) throws IOException {
-        String source = templateSource;
-        while (true) {
-            try {
-                return new Template(templateLabel, new StringReader(source), cfg);
-            } catch (ParseException e) {
-                int name = legacyEscapeAt(source, e);
-                if (name < 0) {
-                    throw e;
-                }
-                if (mayBeReadOn(source, name + LEGACY_ESCAPE.length())) {
-                    throw new UnsupportedLegacyEscapeException(e);
-                }
-                source = withoutLegacyEscapeAt(source, name);
-            }
+        try {
+            return new Template(templateLabel, new StringReader(templateSource), cfg);
+        } catch (ParseException e) {
+            throw legacyEscapeAt(templateSource, e) < 0 ? e : new UnsupportedLegacyEscapeException(e);
         }
     }
 
@@ -201,28 +190,6 @@ public class TemplateUtils {
         }
         int question = skipWhitespaceBack(source, name - 1);
         return question >= 0 && source.charAt(question) == '?' ? name : -1;
-    }
-
-    /**
-     * Whether the escaped value may be read by a further built-in, which is when it cannot be dropped: doing so would
-     * hand that built-in the raw text. A closing parenthesis counts, since what encloses the built-in could apply one.
-     */
-    private static boolean mayBeReadOn(String source, int afterName) {
-        int next = skipWhitespace(source, afterName);
-        return next < source.length() && (source.charAt(next) == '?' || source.charAt(next) == ')');
-    }
-
-    private static String withoutLegacyEscapeAt(String source, int name) {
-        int question = skipWhitespaceBack(source, name - 1);
-        return source.substring(0, question) + source.substring(name + LEGACY_ESCAPE.length());
-    }
-
-    private static int skipWhitespace(String source, int from) {
-        int at = from;
-        while (at < source.length() && Character.isWhitespace(source.charAt(at))) {
-            at++;
-        }
-        return at;
     }
 
     private static int skipWhitespaceBack(String source, int from) {
@@ -256,7 +223,7 @@ public class TemplateUtils {
         return failure instanceof UnsupportedLegacyEscapeException ? LEGACY_ESCAPE_EDIT : "";
     }
 
-    /** The one legacy escape that cannot be dropped, so that the edit is named for that failure and no other. */
+    /** A refused legacy escape, so that the edit is named for that failure and no other. */
     private static final class UnsupportedLegacyEscapeException extends IOException {
 
         private UnsupportedLegacyEscapeException(ParseException refusal) {

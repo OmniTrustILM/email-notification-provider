@@ -71,9 +71,9 @@ A value belongs in those positions only after it has been checked for that posit
 
 A value that has to be delivered as markup opts out with `${variable?no_esc}`, and what it carries is then the template author's responsibility.
 
-A template written before escaping arrived may still carry `?html`, and keeps working: the built-in is dropped as the template is parsed, which leaves the value to be escaped on its way out, so the message is what it always was. A use whose escaped value is read by a further built-in in the same expression, as in `${variable?html?upper_case}`, is refused instead, and the error names the edit: write `?esc?markup_string` in place of `?html` and close the expression with `?no_esc`.
+A template written before escaping arrived may still carry `?html`, which FreeMarker does not accept where values are escaped for it. Such a template is refused rather than adjusted, because what its escaped value is used for cannot be seen where the built-in is written: a template that compares or measures the escaped text would quietly behave differently if the built-in were simply removed.
 
-There is one limit worth checking a template against. Dropping the built-in leaves the value raw until it reaches the output, so a template that reads the escaped value rather than delivering it renders differently than before: a comparison such as `<#if variable?html == "&lt;b&gt;">`, a `<#switch>` on it, or a built-in applied later to a variable or macro parameter it was bound to, as in `<#assign e = variable?html>${e?length}`. Such a template is not refused, because what becomes of the value after the built-in cannot be seen where it is written. Apply the same replacement there, `?esc?markup_string` with `?no_esc` closing the expression, to keep the escaped text.
+The refusal happens where it can be acted on. Saving a notification instance whose content template carries `?html` is rejected with the edit; every stored template that will not render is named in the log at startup; and a notification that reaches one reports the same thing. The edit is to remove `?html` and let the value be escaped on its way out, `?no_esc` where a value has to stay markup, and `?esc?markup_string` with `?no_esc` closing the expression where the escaped text is read further on.
 
 The following is an example of the Content Template with variables:
 ```htlm

@@ -52,41 +52,22 @@ class CommentBodyTemplateUtilsTest {
     }
 
     @Test
-    void aTemplateThatEscapedByHandRendersAsItDidBefore() {
-        String escapedByHand = TemplateUtils
-                .renderHtml("email content", "<div>${notificationData.body?html}</div>", request);
+    void aTemplateEscapingByHandIsRefusedWhereverItDoesSo() {
+        for (String template : List
+                .of("<div>${notificationData.body?html}</div>",
+                        "<div>${notificationData.body ? html}</div>",
+                        "<div>\t${notificationData.body?html}</div>",
+                        "<#assign escaped = notificationData.body?html><div>${escaped}</div>",
+                        "<#if notificationData.body?html == \"x\">y</#if>",
+                        "<#macro show v><div>${v}</div></#macro><@show v=notificationData.body?html/>",
+                        "<div>${notificationData.body?html?upper_case}</div>")) {
+            NotificationException refused = Assertions
+                    .assertThrows(NotificationException.class,
+                            () -> TemplateUtils.renderHtml("email content", template, request), template);
 
-        Assertions
-                .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
-                        escapedByHand);
-        Assertions.assertTrue(escapedByHand.contains("&lt;b&gt;bold&lt;/b&gt;"), escapedByHand);
-        Assertions.assertFalse(escapedByHand.contains("&amp;lt;"), escapedByHand);
-
-        // The parser says where it refused, so a literal holding a brace is no obstacle
-        Assertions
-                .assertTrue(TemplateUtils
-                        .renderHtml("email content", "<div>${notificationData.body?replace(\"}\", \"\")?html}</div>",
-                                request)
-                        .contains("&lt;b&gt;bold&lt;/b&gt;"));
-    }
-
-    @Test
-    void aTemplateThatEscapedByHandInAnyPositionRendersAsItDidBefore() {
-        String expected = TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request);
-
-        Assertions
-                .assertEquals(expected, TemplateUtils
-                        .renderHtml("email content", "<#assign escaped = notificationData.body?html><div>${escaped}</div>",
-                                request));
-        Assertions
-                .assertEquals(expected, TemplateUtils
-                        .renderHtml("email content",
-                                "<#macro show value><div>${value}</div></#macro><@show value=notificationData.body?html/>",
-                                request));
-        Assertions
-                .assertEquals(expected + expected, TemplateUtils
-                        .renderHtml("email content", "<div>${notificationData.body?html}</div>"
-                                + "<div>${notificationData.body?html}</div>", request));
+            Assertions.assertTrue(refused.getMessage().contains("remove ?html"), template + " -> " + refused.getMessage());
+            Assertions.assertTrue(refused.getMessage().contains("?no_esc"), template + " -> " + refused.getMessage());
+        }
     }
 
     @Test
@@ -98,42 +79,6 @@ class CommentBodyTemplateUtilsTest {
 
         Assertions.assertFalse(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
         Assertions.assertFalse(refused.getMessage().contains("remove"), refused.getMessage());
-    }
-
-    @Test
-    void aLegacyEscapeBehindATabIsDroppedLikeAnyOther() {
-        Assertions
-                .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
-                        TemplateUtils
-                                .renderHtml("email content", "<div>\t${notificationData.body?html}</div>", request)
-                                .replace("\t", ""));
-    }
-
-    @Test
-    void aLegacyEscapeWrittenWithSpacesIsDroppedLikeAnyOther() {
-        Assertions
-                .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
-                        TemplateUtils
-                                .renderHtml("email content", "<div>${notificationData.body ? html}</div>", request));
-    }
-
-    @Test
-    void aLegacyEscapeBehindParenthesesIsRefusedRatherThanGuessedAt() {
-        NotificationException refused = Assertions
-                .assertThrows(NotificationException.class, () -> TemplateUtils
-                        .renderHtml("email content", "<div>${(notificationData.body?html)?upper_case}</div>", request));
-
-        Assertions.assertTrue(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
-    }
-
-    @Test
-    void aLegacyEscapeThatIsNotTerminalIsRefusedWithTheEditItNeeds() {
-        NotificationException refused = Assertions
-                .assertThrows(NotificationException.class, () -> TemplateUtils
-                        .renderHtml("email content", "<div>${notificationData.body?html?upper_case}</div>", request));
-
-        Assertions.assertTrue(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
-        Assertions.assertTrue(refused.getMessage().contains("?no_esc"), refused.getMessage());
     }
 
     @Test
