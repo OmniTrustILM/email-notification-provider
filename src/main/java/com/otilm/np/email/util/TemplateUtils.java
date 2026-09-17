@@ -162,6 +162,9 @@ public class TemplateUtils {
         cfg.setLogTemplateExceptions(false);
         cfg.setWrapUncheckedExceptions(true);
         cfg.setOutputFormat(outputFormat);
+        // A parse failure's column is read as an offset into the source, so a tab must count as the one character it
+        // is rather than as a jump to the next tab stop
+        cfg.setTabSize(1);
         return cfg;
     }
 

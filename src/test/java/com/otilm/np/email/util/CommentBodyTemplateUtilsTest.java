@@ -101,6 +101,15 @@ class CommentBodyTemplateUtilsTest {
     }
 
     @Test
+    void aLegacyEscapeBehindATabIsDroppedLikeAnyOther() {
+        Assertions
+                .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
+                        TemplateUtils
+                                .renderHtml("email content", "<div>\t${notificationData.body?html}</div>", request)
+                                .replace("\t", ""));
+    }
+
+    @Test
     void aLegacyEscapeWrittenWithSpacesIsDroppedLikeAnyOther() {
         Assertions
                 .assertEquals(TemplateUtils.renderHtml("email content", "<div>${notificationData.body}</div>", request),
