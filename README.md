@@ -73,7 +73,7 @@ A value that has to be delivered as markup opts out with `${variable?no_esc}`, a
 
 A template written before escaping arrived may still carry `?html`, which FreeMarker does not accept where values are escaped for it. Such a template is refused rather than adjusted, because what its escaped value is used for cannot be seen where the built-in is written: a template that compares or measures the escaped text would quietly behave differently if the built-in were simply removed.
 
-The refusal happens where it can be acted on. Saving a notification instance whose content template carries `?html` is rejected with the edit; every stored template that will not render is named in the log at startup; and a notification that reaches one reports the same thing. The edit is to remove `?html` and let the value be escaped on its way out, `?no_esc` where a value has to stay markup, and `?esc?markup_string` with `?no_esc` closing the expression where the escaped text is read further on.
+The refusal happens where it can be acted on, and reads the same in each place: saving a notification instance whose content template carries `?html` is rejected with the edit, every stored template that will not render is named in the log at startup, and a notification that reaches one is answered with the same message and an unprocessable-entity status, since the template is configuration rather than a fault of the connector. The edit is to remove `?html` and let the value be escaped on its way out, `?no_esc` where a value has to stay markup, and `?esc?markup_string` with `?no_esc` closing the expression where the escaped text is read further on.
 
 The following is an example of the Content Template with variables:
 ```htlm

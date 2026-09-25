@@ -300,6 +300,28 @@ class NotificationInstanceServiceImplTest {
     }
 
     @Test
+    void sendNotification_reportsATemplateThatWillNotRenderAsAValidationFailure() {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance instance = buildPersistedInstance(uuid);
+        instance
+                .setContentTemplate(Base64
+                        .getEncoder()
+                        .encodeToString("<div>${notificationData.subjectDn?html}</div>".getBytes()));
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+
+        NotificationRecipientDto recipient = new NotificationRecipientDto();
+        recipient.setEmail("to@example.com");
+        NotificationProviderNotifyRequestDto request = buildNotifyRequest(List.of(recipient));
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.sendNotification(uuid, request));
+
+        assertTrue(refused.getMessage().contains("Remove the ?html"), refused.getMessage());
+        assertEquals(1, refused.getErrors().size());
+        verify(emailSender, never()).send(any(MimeMessage.class));
+    }
+
+    @Test
     void sendNotification_sendsEmailToRecipientFromMappedAttribute() throws Exception {
         UUID uuid = UUID.randomUUID();
         NotificationInstance instance = buildPersistedInstance(uuid);

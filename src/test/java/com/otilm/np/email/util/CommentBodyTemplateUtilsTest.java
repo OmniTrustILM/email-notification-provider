@@ -1,7 +1,7 @@
 package com.otilm.np.email.util;
 
 import com.otilm.api.model.common.events.data.CommentEventData;
-import com.otilm.np.email.exception.NotificationException;
+import com.otilm.api.exception.ValidationException;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
@@ -61,19 +61,19 @@ class CommentBodyTemplateUtilsTest {
                         "<#if notificationData.body?html == \"x\">y</#if>",
                         "<#macro show v><div>${v}</div></#macro><@show v=notificationData.body?html/>",
                         "<div>${notificationData.body?html?upper_case}</div>")) {
-            NotificationException refused = Assertions
-                    .assertThrows(NotificationException.class,
+            ValidationException refused = Assertions
+                    .assertThrows(ValidationException.class,
                             () -> TemplateUtils.renderHtml("email content", template, request), template);
 
-            Assertions.assertTrue(refused.getMessage().contains("remove ?html"), template + " -> " + refused.getMessage());
+            Assertions.assertTrue(refused.getMessage().contains("Remove the ?html"), template + " -> " + refused.getMessage());
             Assertions.assertTrue(refused.getMessage().contains("?no_esc"), template + " -> " + refused.getMessage());
         }
     }
 
     @Test
     void aBrokenTemplateIsNotSentToRemoveAnUnrelatedQueryString() {
-        NotificationException refused = Assertions
-                .assertThrows(NotificationException.class, () -> TemplateUtils
+        ValidationException refused = Assertions
+                .assertThrows(ValidationException.class, () -> TemplateUtils
                         .renderHtml("email content",
                                 "<a href=\"https://example.test/view?html=true\">${unclosed</a>", request));
 

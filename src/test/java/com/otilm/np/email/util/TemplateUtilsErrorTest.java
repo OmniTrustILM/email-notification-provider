@@ -6,6 +6,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
+import com.otilm.api.exception.ValidationException;
 import com.otilm.np.email.exception.NotificationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,7 @@ class TemplateUtilsErrorTest {
 
     @Test
     void malformedTemplateThrowsCreationError() {
-        NotificationException ex = assertThrows(NotificationException.class,
+        ValidationException ex = assertThrows(ValidationException.class,
                 () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${unclosed", request()));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertNoPayloadExposure(ex);
@@ -57,7 +58,7 @@ class TemplateUtilsErrorTest {
 
     @Test
     void unresolvedReferenceThrowsProcessingError() {
-        NotificationException ex = assertThrows(NotificationException.class,
+        ValidationException ex = assertThrows(ValidationException.class,
                 () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${totallyMissingVar}", request()));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertTrue(ex.getMessage().contains("line"), "the rendering failure must stay locatable in the template");
@@ -67,7 +68,7 @@ class TemplateUtilsErrorTest {
     @Test
     void renderingFailureLogsTemplateAndEventIdentifiers() {
         NotificationProviderNotifyRequestDto request = request();
-        assertThrows(NotificationException.class,
+        assertThrows(ValidationException.class,
                 () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${totallyMissingVar}", request));
 
         List<String> errorLogs = formattedLogs();
@@ -105,7 +106,7 @@ class TemplateUtilsErrorTest {
      */
     @Test
     void coercionFailureExposesNoPayloadValue() {
-        NotificationException ex = assertThrows(NotificationException.class,
+        ValidationException ex = assertThrows(ValidationException.class,
                 () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
                         "${notificationData.credential?number}", request()));
 
@@ -116,7 +117,7 @@ class TemplateUtilsErrorTest {
     /** Date coercion quotes the value in its own message format, so it is covered separately. */
     @Test
     void dateCoercionFailureExposesNoPayloadValue() {
-        NotificationException ex = assertThrows(NotificationException.class,
+        ValidationException ex = assertThrows(ValidationException.class,
                 () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
                         "${notificationData.credential?datetime}", request()));
 
@@ -176,7 +177,7 @@ class TemplateUtilsErrorTest {
         assertFalse(description.contains(SENSITIVE_VALUE));
     }
 
-    private void assertNoPayloadExposure(NotificationException ex) {
+    private void assertNoPayloadExposure(Exception ex) {
         assertFalse(ex.getMessage().contains(SENSITIVE_VALUE),
                 "exception message must not carry the request payload: " + ex.getMessage());
         for (String message : formattedLogs()) {

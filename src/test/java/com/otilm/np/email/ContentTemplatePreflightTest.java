@@ -38,7 +38,7 @@ class ContentTemplatePreflightTest {
 
         Assertions.assertEquals(3, reported.size(), reported.toString());
         Assertions.assertTrue(reported.get(0).startsWith("'escaped by hand'"), reported.toString());
-        Assertions.assertTrue(reported.get(0).contains("remove ?html"), reported.toString());
+        Assertions.assertTrue(reported.get(0).contains("Remove the ?html"), reported.toString());
         Assertions.assertTrue(reported.get(1).startsWith("'escape read on'"), reported.toString());
         Assertions.assertTrue(reported.get(2).startsWith("'malformed'"), reported.toString());
     }
