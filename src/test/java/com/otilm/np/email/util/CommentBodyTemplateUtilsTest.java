@@ -1,11 +1,11 @@
 package com.otilm.np.email.util;
 
+import com.otilm.api.exception.ValidationException;
 import com.otilm.api.model.common.events.data.CommentEventData;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
-import com.otilm.np.email.exception.NotificationException;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -60,27 +60,46 @@ class CommentBodyTemplateUtilsTest {
                         "<#if notificationData.body?html == \"x\">y</#if>",
                         "<#macro show v><div>${v}</div></#macro><@show v=notificationData.body?html/>",
                         "<div>${notificationData.body?html?upper_case}</div>")) {
-            NotificationException refused = Assertions
-                    .assertThrows(NotificationException.class,
+            ValidationException refused = Assertions
+                    .assertThrows(ValidationException.class,
                             () -> TemplateUtils.renderHtml("email content", template, request), template);
 
             Assertions
-                    .assertTrue(refused.getMessage().contains("remove ?html"),
+                    .assertTrue(refused.getMessage().contains("Remove the ?html"),
                             template + " -> " + refused.getMessage());
             Assertions.assertTrue(refused.getMessage().contains("?no_esc"), template + " -> " + refused.getMessage());
         }
     }
 
     @Test
+    void theRefusalNamesWhereTheEscapeIsWritten() {
+        ValidationException refused = Assertions
+                .assertThrows(ValidationException.class, () -> TemplateUtils
+                        .renderHtml("email content", "<div>${notificationData.body?html}</div>", request));
+
+        Assertions.assertTrue(refused.getMessage().contains("line 1, column 30"), refused.getMessage());
+    }
+
+    // A tab counts as one column, so the position sends the author to the escape rather than past it
+    @Test
+    void aTabAheadOfTheEscapeCountsAsOneColumn() {
+        ValidationException refused = Assertions
+                .assertThrows(ValidationException.class, () -> TemplateUtils
+                        .renderHtml("email content", "<div>\t${notificationData.body?html}</div>", request));
+
+        Assertions.assertTrue(refused.getMessage().contains("line 1, column 31"), refused.getMessage());
+    }
+
+    @Test
     void aBrokenTemplateIsNotSentToRemoveAnUnrelatedQueryString() {
-        NotificationException refused = Assertions
-                .assertThrows(NotificationException.class,
+        ValidationException refused = Assertions
+                .assertThrows(ValidationException.class,
                         () -> TemplateUtils
                                 .renderHtml("email content",
                                         "<a href=\"https://example.test/view?html=true\">${unclosed</a>", request));
 
         Assertions.assertFalse(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
-        Assertions.assertFalse(refused.getMessage().contains("remove"), refused.getMessage());
+        Assertions.assertFalse(refused.getMessage().contains("Remove the ?html"), refused.getMessage());
     }
 
     @Test

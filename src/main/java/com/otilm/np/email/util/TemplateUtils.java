@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.otilm.api.exception.ValidationError;
+import com.otilm.api.exception.ValidationException;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.np.email.exception.NotificationException;
 import freemarker.core.HTMLOutputFormat;
@@ -32,10 +34,6 @@ public class TemplateUtils {
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final String LEGACY_ESCAPE = "html";
-    private static final String LEGACY_ESCAPE_EDIT = " Values are escaped on their way into the content template,"
-            + " so remove ?html from it. A value that has to stay markup takes ?no_esc instead, and one whose escaped"
-            + " text is read further on, compared or measured, takes ?esc?markup_string with ?no_esc closing the"
-            + " expression.";
 
     private TemplateUtils() {
     }
@@ -126,8 +124,7 @@ public class TemplateUtils {
             logger
                     .error("Failed to parse the {} template: event={}, resource={}, error={}", templateLabel,
                             request.getEvent(), request.getResource(), e.getMessage());
-            throw new NotificationException(
-                    "Failed to parse the " + templateLabel + " template: " + e.getMessage() + legacyEscapingHint(e), e);
+            throw new ValidationException(ValidationError.create(parseFailureDescription(templateLabel, e)));
         }
 
         // Process the template with the data model
@@ -139,7 +136,8 @@ public class TemplateUtils {
             logger
                     .error("Failed to render the {} template: event={}, resource={}, error={}", templateLabel,
                             request.getEvent(), request.getResource(), diagnostics);
-            throw new NotificationException("Failed to render the " + templateLabel + " template: " + diagnostics);
+            throw new ValidationException(
+                    ValidationError.create("The " + templateLabel + " template cannot be rendered: " + diagnostics));
         }
 
         return stringWriter.toString();
@@ -154,7 +152,7 @@ public class TemplateUtils {
             parse("email content", templateSource, configuration(HTMLOutputFormat.INSTANCE));
             return Optional.empty();
         } catch (IOException e) {
-            return Optional.of(e.getMessage() + legacyEscapingHint(e));
+            return Optional.of(parseFailureDescription("email content", e));
         }
     }
 
@@ -217,19 +215,39 @@ public class TemplateUtils {
     }
 
     /**
-     * FreeMarker refuses the legacy {@code ?html} once values are escaped for it, and says so in terms of its own
-     * built-ins. The edit is named only when that is what failed, so a template that merely carries the text somewhere,
-     * in a URL for one, is not sent to alter it.
+     * What the operator is told about a template that will not parse. Their own syntax error is reported in
+     * FreeMarker's words, which name the position and the construct; the legacy escape is reported in ours, since its
+     * refusal is this connector's and the edit is what matters.
      */
-    private static String legacyEscapingHint(IOException failure) {
-        return failure instanceof UnsupportedLegacyEscapeException ? LEGACY_ESCAPE_EDIT : "";
+    private static String parseFailureDescription(String templateLabel, IOException failure) {
+        if (failure instanceof UnsupportedLegacyEscapeException legacyEscape) {
+            return ("The %s template cannot be rendered: line %d, column %d escapes a value with ?html, which is not"
+                    + " accepted now that values are escaped on their way into the email. Remove the ?html. A value"
+                    + " that has to stay markup takes ?no_esc instead, and one whose escaped text is read further on,"
+                    + " compared or measured, takes ?esc?markup_string with ?no_esc closing the expression.")
+                    .formatted(templateLabel, legacyEscape.line(), legacyEscape.column());
+        }
+        return "The %s template cannot be rendered: %s".formatted(templateLabel, failure.getMessage());
     }
 
-    /** A refused legacy escape, so that the edit is named for that failure and no other. */
+    /** A refused legacy escape, carrying where it was written so the operator is sent to it. */
     private static final class UnsupportedLegacyEscapeException extends IOException {
+
+        private final int line;
+        private final int column;
 
         private UnsupportedLegacyEscapeException(ParseException refusal) {
             super(refusal.getMessage(), refusal);
+            this.line = refusal.getLineNumber();
+            this.column = refusal.getColumnNumber();
+        }
+
+        private int line() {
+            return line;
+        }
+
+        private int column() {
+            return column;
         }
     }
 
