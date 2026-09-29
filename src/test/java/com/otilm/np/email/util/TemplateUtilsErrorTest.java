@@ -50,16 +50,18 @@ class TemplateUtilsErrorTest {
 
     @Test
     void malformedTemplateThrowsCreationError() {
+        NotificationProviderNotifyRequestDto request = request();
         ValidationException ex = assertThrows(ValidationException.class,
-                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${unclosed", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${unclosed", request));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertNoPayloadExposure(ex);
     }
 
     @Test
     void unresolvedReferenceThrowsProcessingError() {
+        NotificationProviderNotifyRequestDto request = request();
         ValidationException ex = assertThrows(ValidationException.class,
-                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${totallyMissingVar}", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${totallyMissingVar}", request));
         assertTrue(ex.getMessage().contains(TEMPLATE_LABEL));
         assertTrue(ex.getMessage().contains("line"), "the rendering failure must stay locatable in the template");
         assertNoPayloadExposure(ex);
@@ -106,9 +108,9 @@ class TemplateUtilsErrorTest {
      */
     @Test
     void coercionFailureExposesNoPayloadValue() {
+        NotificationProviderNotifyRequestDto request = request();
         ValidationException ex = assertThrows(ValidationException.class,
-                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
-                        "${notificationData.credential?number}", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${notificationData.credential?number}", request));
 
         assertNoPayloadExposure(ex);
         assertTrue(ex.getMessage().contains("line"), "the failure must still point at the template position");
@@ -117,9 +119,9 @@ class TemplateUtilsErrorTest {
     /** Date coercion quotes the value in its own message format, so it is covered separately. */
     @Test
     void dateCoercionFailureExposesNoPayloadValue() {
+        NotificationProviderNotifyRequestDto request = request();
         ValidationException ex = assertThrows(ValidationException.class,
-                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
-                        "${notificationData.credential?datetime}", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${notificationData.credential?datetime}", request));
 
         assertNoPayloadExposure(ex);
     }
