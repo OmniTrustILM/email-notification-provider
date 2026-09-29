@@ -15,11 +15,10 @@ import com.otilm.api.model.common.attribute.v2.content.BaseAttributeContentV2;
 import com.otilm.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.otilm.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.otilm.api.model.common.attribute.v3.DataAttributeV3;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -92,22 +91,20 @@ class AttributeServiceImplTest {
     void validateAttributes_throwsForUnsupportedKind() {
         List<RequestAttribute> empty = List.of();
 
-        assertThrows(ValidationException.class,
-                () -> attributeService.validateAttributes(UNSUPPORTED_KIND, empty));
+        assertThrows(ValidationException.class, () -> attributeService.validateAttributes(UNSUPPORTED_KIND, empty));
     }
 
     @Test
     void validateAttributes_throwsWhenRequiredAttributeMissing() {
         List<RequestAttribute> empty = List.of();
 
-        assertThrows(ValidationException.class,
-                () -> attributeService.validateAttributes(EMAIL_KIND, empty));
+        assertThrows(ValidationException.class, () -> attributeService.validateAttributes(EMAIL_KIND, empty));
     }
 
     @Test
     void listMappingAttributes_returnsRecipientEmailAttribute() {
-        List<com.otilm.api.model.common.attribute.common.DataAttribute> attributes =
-                attributeService.listMappingAttributes(EMAIL_KIND);
+        List<com.otilm.api.model.common.attribute.common.DataAttribute> attributes = attributeService
+                .listMappingAttributes(EMAIL_KIND);
 
         assertEquals(1, attributes.size());
         DataAttributeV3 recipient = (DataAttributeV3) attributes.get(0);
@@ -129,22 +126,23 @@ class AttributeServiceImplTest {
         assertInstanceOf(RegexpAttributeConstraint.class, constraint);
         RegexpAttributeConstraint regex = (RegexpAttributeConstraint) constraint;
         assertEquals("Email address(es)", regex.getDescription());
-        assertEquals("Invalid email address format. Separate multiple addresses with ',' or ';'.", regex.getErrorMessage());
+        assertEquals("Invalid email address format. Separate multiple addresses with ',' or ';'.",
+                regex.getErrorMessage());
         assertEquals(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX, regex.getData());
     }
 
     @Test
     void recipientEmailListRegex_acceptsSingleAndDelimitedAddresses_rejectsInvalid() {
         assertTrue("a@example.com".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
-        assertTrue("a@example.com, b@example.com; c@example.com".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
+        assertTrue(
+                "a@example.com, b@example.com; c@example.com".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
         assertFalse("not-an-email".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
         assertFalse("a@example.com, not-an-email".matches(AttributeServiceImpl.EMAIL_ADDRESS_LIST_REGEX));
     }
 
     @Test
     void listMappingAttributes_throwsForUnsupportedKind() {
-        assertThrows(ValidationException.class,
-                () -> attributeService.listMappingAttributes(UNSUPPORTED_KIND));
+        assertThrows(ValidationException.class, () -> attributeService.listMappingAttributes(UNSUPPORTED_KIND));
     }
 
     private List<RequestAttribute> buildValidRequestAttributes() {

@@ -10,11 +10,10 @@ import com.otilm.api.model.connector.notification.NotificationProviderInstanceRe
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.np.email.service.AttributeService;
 import com.otilm.np.email.service.NotificationInstanceService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class NotificationInstanceControllerImpl implements NotificationInstanceController {
@@ -45,18 +44,18 @@ public class NotificationInstanceControllerImpl implements NotificationInstanceC
     }
 
     @Override
-    public NotificationProviderInstanceDto createNotificationInstance(NotificationProviderInstanceRequestDto request) throws AlreadyExistException {
-        if (!attributeService.validateAttributes(
-                request.getKind(), request.getAttributes())) {
+    public NotificationProviderInstanceDto createNotificationInstance(NotificationProviderInstanceRequestDto request)
+            throws AlreadyExistException {
+        if (!attributeService.validateAttributes(request.getKind(), request.getAttributes())) {
             throw new ValidationException("Notification instance attributes validation failed.");
         }
         return notificationInstanceService.createNotificationInstance(request);
     }
 
     @Override
-    public NotificationProviderInstanceDto updateNotificationInstance(String uuid, NotificationProviderInstanceRequestDto request) throws NotFoundException {
-        if (!attributeService.validateAttributes(
-                request.getKind(), request.getAttributes())) {
+    public NotificationProviderInstanceDto updateNotificationInstance(String uuid,
+            NotificationProviderInstanceRequestDto request) throws NotFoundException {
+        if (!attributeService.validateAttributes(request.getKind(), request.getAttributes())) {
             throw new ValidationException("Notification instance attributes validation failed.");
         }
         return notificationInstanceService.updateNotificationInstance(UUID.fromString(uuid), request);
