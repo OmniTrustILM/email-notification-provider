@@ -7,13 +7,12 @@ import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequ
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
 import com.otilm.np.email.exception.NotificationException;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -72,9 +71,12 @@ class TemplateUtilsErrorTest {
 
         List<String> errorLogs = formattedLogs();
         assertFalse(errorLogs.isEmpty());
-        assertTrue(errorLogs.stream().anyMatch(message -> message.contains(TEMPLATE_LABEL)
-                        && message.contains(String.valueOf(request.getEvent()))
-                        && message.contains(String.valueOf(request.getResource()))),
+        assertTrue(
+                errorLogs
+                        .stream()
+                        .anyMatch(message -> message.contains(TEMPLATE_LABEL)
+                                && message.contains(String.valueOf(request.getEvent()))
+                                && message.contains(String.valueOf(request.getResource()))),
                 "failure log must identify the template, event, and resource: " + errorLogs);
     }
 
@@ -100,14 +102,13 @@ class TemplateUtilsErrorTest {
     }
 
     /**
-     * FreeMarker quotes the offending value in coercion failures, so the raw message must never
-     * reach the log or the exception returned to the platform.
+     * FreeMarker quotes the offending value in coercion failures, so the raw message must never reach the log or the
+     * exception returned to the platform.
      */
     @Test
     void coercionFailureExposesNoPayloadValue() {
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
-                        "${notificationData.credential?number}", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${notificationData.credential?number}", request()));
 
         assertNoPayloadExposure(ex);
         assertTrue(ex.getMessage().contains("line"), "the failure must still point at the template position");
@@ -117,8 +118,7 @@ class TemplateUtilsErrorTest {
     @Test
     void dateCoercionFailureExposesNoPayloadValue() {
         NotificationException ex = assertThrows(NotificationException.class,
-                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL,
-                        "${notificationData.credential?datetime}", request()));
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, "${notificationData.credential?datetime}", request()));
 
         assertNoPayloadExposure(ex);
     }
@@ -126,7 +126,8 @@ class TemplateUtilsErrorTest {
     /** Failures without a template position fall back to the exception type alone. */
     @Test
     void nonTemplateRenderFailureIsDescribedByTypeOnly() {
-        assertTrue(TemplateUtils.renderFailureDiagnostics(new java.io.IOException("writer broke on " + SENSITIVE_VALUE))
+        assertTrue(TemplateUtils
+                .renderFailureDiagnostics(new java.io.IOException("writer broke on " + SENSITIVE_VALUE))
                 .equals("IOException"));
     }
 
@@ -180,8 +181,7 @@ class TemplateUtilsErrorTest {
         assertFalse(ex.getMessage().contains(SENSITIVE_VALUE),
                 "exception message must not carry the request payload: " + ex.getMessage());
         for (String message : formattedLogs()) {
-            assertFalse(message.contains(SENSITIVE_VALUE),
-                    "log output must not carry the request payload: " + message);
+            assertFalse(message.contains(SENSITIVE_VALUE), "log output must not carry the request payload: " + message);
         }
     }
 

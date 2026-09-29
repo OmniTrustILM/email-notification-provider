@@ -1,5 +1,9 @@
 package com.otilm.np.email.service.impl;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.otilm.api.exception.AlreadyExistException;
 import com.otilm.api.exception.NotFoundException;
 import com.otilm.api.exception.ValidationException;
@@ -15,9 +19,9 @@ import com.otilm.api.model.common.attribute.v2.content.CodeBlockAttributeContent
 import com.otilm.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.otilm.api.model.common.attribute.v3.content.BaseAttributeContentV3;
 import com.otilm.api.model.common.attribute.v3.content.StringAttributeContentV3;
+import com.otilm.api.model.common.events.data.CertificateStatusChangedEventData;
 import com.otilm.api.model.connector.notification.NotificationProviderInstanceDto;
 import com.otilm.api.model.connector.notification.NotificationProviderInstanceRequestDto;
-import com.otilm.api.model.common.events.data.CertificateStatusChangedEventData;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
@@ -25,11 +29,13 @@ import com.otilm.api.model.core.other.ResourceEvent;
 import com.otilm.np.email.dao.entity.NotificationInstance;
 import com.otilm.np.email.dao.repository.NotificationInstanceRepository;
 import com.otilm.np.email.service.AttributeService;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import jakarta.mail.internet.MimeMessage;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,13 +44,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
-
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -220,8 +219,7 @@ class NotificationInstanceServiceImplTest {
         UUID uuid = UUID.randomUUID();
         when(repository.findByUuid(uuid)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
-                () -> service.updateNotificationInstance(uuid, buildInstanceRequest()));
+        assertThrows(NotFoundException.class, () -> service.updateNotificationInstance(uuid, buildInstanceRequest()));
         verify(repository, never()).save(any());
     }
 
@@ -261,9 +259,10 @@ class NotificationInstanceServiceImplTest {
         service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
 
         verify(emailSender, times(1)).send(mimeMessage);
-        assertArrayEquals(new String[]{"to@example.com"}, mimeMessage.getAllRecipients() == null
-                ? new String[0]
-                : new String[]{mimeMessage.getAllRecipients()[0].toString()});
+        assertArrayEquals(new String[]{"to@example.com"},
+                mimeMessage.getAllRecipients() == null
+                        ? new String[0]
+                        : new String[]{mimeMessage.getAllRecipients()[0].toString()});
         assertEquals(SUBJECT, mimeMessage.getSubject());
     }
 
@@ -272,9 +271,8 @@ class NotificationInstanceServiceImplTest {
         UUID uuid = UUID.randomUUID();
         NotificationInstance instance = buildPersistedInstance(uuid);
         instance
-                .setContentTemplate(Base64
-                        .getEncoder()
-                        .encodeToString("<div>${notificationData.subjectDn}</div>".getBytes()));
+                .setContentTemplate(
+                        Base64.getEncoder().encodeToString("<div>${notificationData.subjectDn}</div>".getBytes()));
         instance.setSubject("Certificate ${notificationData.subjectDn}");
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
 
@@ -396,8 +394,7 @@ class NotificationInstanceServiceImplTest {
         recipient.setMappedAttributes(List.of(buildRecipientEmailAttribute("")));
         NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(List.of(recipient));
 
-        assertThrows(ValidationException.class,
-                () -> service.sendNotification(uuid, notifyRequest));
+        assertThrows(ValidationException.class, () -> service.sendNotification(uuid, notifyRequest));
         verify(emailSender, never()).send(any(MimeMessage.class));
     }
 
@@ -443,8 +440,9 @@ class NotificationInstanceServiceImplTest {
 
         NotificationRecipientDto recipient = new NotificationRecipientDto();
         recipient.setName("R1");
-        recipient.setMappedAttributes(List.of(
-                buildRecipientEmailAttribute("a@example.com, b@example.com; c@example.com")));
+        recipient
+                .setMappedAttributes(
+                        List.of(buildRecipientEmailAttribute("a@example.com, b@example.com; c@example.com")));
 
         service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
 
@@ -467,8 +465,7 @@ class NotificationInstanceServiceImplTest {
 
         NotificationRecipientDto recipient = new NotificationRecipientDto();
         recipient.setName("R1");
-        recipient.setMappedAttributes(List.of(
-                buildRecipientEmailAttributeMulti("a@example.com", "b@example.com")));
+        recipient.setMappedAttributes(List.of(buildRecipientEmailAttributeMulti("a@example.com", "b@example.com")));
 
         service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
 
@@ -490,8 +487,9 @@ class NotificationInstanceServiceImplTest {
 
         NotificationRecipientDto recipient = new NotificationRecipientDto();
         recipient.setName("R1");
-        recipient.setMappedAttributes(List.of(
-                buildRecipientEmailAttribute("good@example.com, not-an-email, also-good@example.com")));
+        recipient
+                .setMappedAttributes(
+                        List.of(buildRecipientEmailAttribute("good@example.com, not-an-email, also-good@example.com")));
 
         service.sendNotification(uuid, buildNotifyRequest(List.of(recipient)));
 
@@ -582,8 +580,7 @@ class NotificationInstanceServiceImplTest {
 
         NotificationProviderNotifyRequestDto notifyRequest = buildNotifyRequest(null);
 
-        assertThrows(ValidationException.class,
-                () -> service.sendNotification(uuid, notifyRequest));
+        assertThrows(ValidationException.class, () -> service.sendNotification(uuid, notifyRequest));
         verify(emailSender, never()).send(any(MimeMessage.class));
     }
 
@@ -622,8 +619,8 @@ class NotificationInstanceServiceImplTest {
     }
 
     /**
-     * Payload logging is opt-in: raising the log level alone must never write the request into the
-     * logs, only the payload-free summary.
+     * Payload logging is opt-in: raising the log level alone must never write the request into the logs, only the
+     * payload-free summary.
      */
     @Test
     void sendNotification_debugLoggingWithoutOptIn_logsNoPayload() throws Exception {
@@ -695,7 +692,9 @@ class NotificationInstanceServiceImplTest {
             appender.stop();
         }
 
-        assertTrue(appender.list.stream()
+        assertTrue(
+                appender.list
+                        .stream()
                         .map(ILoggingEvent::getFormattedMessage)
                         .anyMatch(message -> message.contains("debug-visible-credential")),
                 "with payload logging enabled the request content must be available");

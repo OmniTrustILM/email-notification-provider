@@ -7,11 +7,10 @@ import com.otilm.core.util.AttributeDefinitionUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 import java.util.Base64;
 import java.util.List;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Entity
 @Table(name = "notification_instance")
@@ -97,17 +96,21 @@ public class NotificationInstance extends UniquelyIdentified {
             dto.setAttributes(AttributeDefinitionUtils.deserialize("[]", BaseAttribute.class));
         }
 
-        //if (metadata != null) {
-        //    dto.setMetadata(getMetadata());
-        //}
+        // if (metadata != null) {
+        // dto.setMetadata(getMetadata());
+        // }
 
         return dto;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         NotificationInstance that = (NotificationInstance) o;
         return new EqualsBuilder().append(uuid, that.uuid).isEquals();
     }
