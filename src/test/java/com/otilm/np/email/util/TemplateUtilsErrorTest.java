@@ -8,6 +8,7 @@ import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequ
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
 import com.otilm.np.email.exception.NotificationException;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -131,9 +133,8 @@ class TemplateUtilsErrorTest {
     /** Failures without a template position fall back to the exception type alone. */
     @Test
     void nonTemplateRenderFailureIsDescribedByTypeOnly() {
-        assertTrue(TemplateUtils
-                .renderFailureDiagnostics(new java.io.IOException("writer broke on " + SENSITIVE_VALUE))
-                .equals("IOException"));
+        assertEquals("IOException",
+                TemplateUtils.renderFailureDiagnostics(new IOException("writer broke on " + SENSITIVE_VALUE)));
     }
 
     @Test
