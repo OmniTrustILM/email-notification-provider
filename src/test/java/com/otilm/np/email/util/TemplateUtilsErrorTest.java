@@ -3,18 +3,17 @@ package com.otilm.np.email.util;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.otilm.api.exception.ValidationException;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
-import com.otilm.api.exception.ValidationException;
 import com.otilm.np.email.exception.NotificationException;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -75,9 +74,12 @@ class TemplateUtilsErrorTest {
 
         List<String> errorLogs = formattedLogs();
         assertFalse(errorLogs.isEmpty());
-        assertTrue(errorLogs.stream().anyMatch(message -> message.contains(TEMPLATE_LABEL)
-                        && message.contains(String.valueOf(request.getEvent()))
-                        && message.contains(String.valueOf(request.getResource()))),
+        assertTrue(
+                errorLogs
+                        .stream()
+                        .anyMatch(message -> message.contains(TEMPLATE_LABEL)
+                                && message.contains(String.valueOf(request.getEvent()))
+                                && message.contains(String.valueOf(request.getResource()))),
                 "failure log must identify the template, event, and resource: " + errorLogs);
     }
 
@@ -103,8 +105,8 @@ class TemplateUtilsErrorTest {
     }
 
     /**
-     * FreeMarker quotes the offending value in coercion failures, so the raw message must never
-     * reach the log or the exception returned to the platform.
+     * FreeMarker quotes the offending value in coercion failures, so the raw message must never reach the log or the
+     * exception returned to the platform.
      */
     @Test
     void coercionFailureExposesNoPayloadValue() {
@@ -129,7 +131,8 @@ class TemplateUtilsErrorTest {
     /** Failures without a template position fall back to the exception type alone. */
     @Test
     void nonTemplateRenderFailureIsDescribedByTypeOnly() {
-        assertTrue(TemplateUtils.renderFailureDiagnostics(new java.io.IOException("writer broke on " + SENSITIVE_VALUE))
+        assertTrue(TemplateUtils
+                .renderFailureDiagnostics(new java.io.IOException("writer broke on " + SENSITIVE_VALUE))
                 .equals("IOException"));
     }
 
@@ -183,8 +186,7 @@ class TemplateUtilsErrorTest {
         assertFalse(ex.getMessage().contains(SENSITIVE_VALUE),
                 "exception message must not carry the request payload: " + ex.getMessage());
         for (String message : formattedLogs()) {
-            assertFalse(message.contains(SENSITIVE_VALUE),
-                    "log output must not carry the request payload: " + message);
+            assertFalse(message.contains(SENSITIVE_VALUE), "log output must not carry the request payload: " + message);
         }
     }
 

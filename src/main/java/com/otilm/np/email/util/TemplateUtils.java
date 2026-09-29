@@ -1,13 +1,13 @@
 package com.otilm.np.email.util;
 
-import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
-import com.otilm.api.exception.ValidationException;
-import com.otilm.api.exception.ValidationError;
-import com.otilm.np.email.exception.NotificationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.otilm.api.exception.ValidationError;
+import com.otilm.api.exception.ValidationException;
+import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
+import com.otilm.np.email.exception.NotificationException;
 import freemarker.core.HTMLOutputFormat;
 import freemarker.core.OutputFormat;
 import freemarker.core.ParseException;
@@ -16,23 +16,21 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TemplateUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(TemplateUtils.class);
 
     /**
-     * Shared mapper: constructing one per call is expensive, and the registered modules keep
-     * types such as {@code java.time} serializable instead of degrading DEBUG output to the
-     * unserializable placeholder.
+     * Shared mapper: constructing one per call is expensive, and the registered modules keep types such as
+     * {@code java.time} serializable instead of degrading DEBUG output to the unserializable placeholder.
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final String LEGACY_ESCAPE = "html";
@@ -44,23 +42,22 @@ public class TemplateUtils {
     }
 
     /**
-     * Payload-free summary of a notification request: identifiers and counts only. This is what
-     * DEBUG logging reports unless payload logging is explicitly switched on.
+     * Payload-free summary of a notification request: identifiers and counts only. This is what DEBUG logging reports
+     * unless payload logging is explicitly switched on.
      */
     public static String summarizeRequest(NotificationProviderNotifyRequestDto request) {
-        return "event=%s, resource=%s, recipients=%d, notificationData=%s".formatted(
-                request.getEvent(), request.getResource(),
-                request.getRecipients() == null ? 0 : request.getRecipients().size(),
-                request.getNotificationData() == null ? "absent" : "present");
+        return "event=%s, resource=%s, recipients=%d, notificationData=%s"
+                .formatted(request.getEvent(), request.getResource(),
+                        request.getRecipients() == null ? 0 : request.getRecipients().size(),
+                        request.getNotificationData() == null ? "absent" : "present");
     }
 
     /**
-     * Serializes the whole notification request for opt-in DEBUG logging — the sanctioned way
-     * to inspect payload content when debugging. Uses explicit JSON serialization because the
-     * request's {@code toString} deliberately excludes the payload-bearing fields, which would
-     * make DEBUG output silently incomplete. A request that cannot be serialized — including one
-     * whose own accessors fail — yields a payload-free placeholder rather than disrupting the
-     * send flow.
+     * Serializes the whole notification request for opt-in DEBUG logging — the sanctioned way to inspect payload
+     * content when debugging. Uses explicit JSON serialization because the request's {@code toString} deliberately
+     * excludes the payload-bearing fields, which would make DEBUG output silently incomplete. A request that cannot be
+     * serialized — including one whose own accessors fail — yields a payload-free placeholder rather than disrupting
+     * the send flow.
      */
     public static String describeRequestForDebug(NotificationProviderNotifyRequestDto request) {
         try {
@@ -71,8 +68,8 @@ public class TemplateUtils {
     }
 
     /**
-     * Renders the HTML content template. Every interpolated value is HTML-escaped, so text a user authored - a
-     * comment body - arrives as text and never as live markup; a template that must insert trusted markup says so with
+     * Renders the HTML content template. Every interpolated value is HTML-escaped, so text a user authored - a comment
+     * body - arrives as text and never as live markup; a template that must insert trusted markup says so with
      * {@code ?no_esc}. A template written before escaping arrived, which escapes with {@code ?html} itself, is refused
      * with the edit it needs: FreeMarker does not accept that built-in where values are escaped for it.
      */
@@ -90,13 +87,14 @@ public class TemplateUtils {
     /**
      * Renders the given FreeMarker template against the notification request in the given output format.
      *
-     * <p>Failure logs and exception messages carry the template label, the event and resource
-     * identifiers, and the underlying error only — never the request payload or the data model.
-     * The request's {@code notificationData} and {@code objectData} can hold sensitive values
-     * (for example a certificate-registration credential), and the thrown exception's message
-     * becomes this connector's HTTP error response toward the platform, so payload content must
-     * not reach either. Full request visibility for debugging remains available through the
-     * DEBUG-level logging of the send flow.</p>
+     * <p>
+     * Failure logs and exception messages carry the template label, the event and resource identifiers, and the
+     * underlying error only — never the request payload or the data model. The request's {@code notificationData} and
+     * {@code objectData} can hold sensitive values (for example a certificate-registration credential), and the thrown
+     * exception's message becomes this connector's HTTP error response toward the platform, so payload content must not
+     * reach either. Full request visibility for debugging remains available through the DEBUG-level logging of the send
+     * flow.
+     * </p>
      *
      * @param templateLabel identifies the rendered template in errors, e.g. "email subject"
      */
@@ -105,13 +103,16 @@ public class TemplateUtils {
         // Convert request to a Map instead of using the JSON node directly
         Map<String, Object> dataModel;
         try {
-            dataModel = OBJECT_MAPPER.convertValue(request, new TypeReference<>() {});
+            dataModel = OBJECT_MAPPER.convertValue(request, new TypeReference<>() {
+            });
         } catch (IllegalArgumentException e) {
             // Only the exception type is reported: Jackson conversion messages can embed model
             // paths or content, and this internal failure has no template-author diagnostics value.
-            logger.error("Failed to build the {} template data model: event={}, resource={}, error={}",
-                    templateLabel, request.getEvent(), request.getResource(), e.getClass().getSimpleName());
-            throw new NotificationException("Failed to build the " + templateLabel + " template data model (" + e.getClass().getSimpleName() + ")");
+            logger
+                    .error("Failed to build the {} template data model: event={}, resource={}, error={}", templateLabel,
+                            request.getEvent(), request.getResource(), e.getClass().getSimpleName());
+            throw new NotificationException("Failed to build the " + templateLabel + " template data model ("
+                    + e.getClass().getSimpleName() + ")");
         }
 
         Configuration cfg = configuration(outputFormat);
@@ -123,8 +124,9 @@ public class TemplateUtils {
         } catch (IOException e) {
             // Parsing happens before the data model is bound, so this message describes the
             // operator's own template only and cannot quote payload values.
-            logger.error("Failed to parse the {} template: event={}, resource={}, error={}",
-                    templateLabel, request.getEvent(), request.getResource(), e.getMessage());
+            logger
+                    .error("Failed to parse the {} template: event={}, resource={}, error={}", templateLabel,
+                            request.getEvent(), request.getResource(), e.getMessage());
             throw new ValidationException(ValidationError.create(parseFailureDescription(templateLabel, e)));
         }
 
@@ -134,10 +136,11 @@ public class TemplateUtils {
             template.process(dataModel, stringWriter);
         } catch (TemplateException | IOException e) {
             String diagnostics = renderFailureDiagnostics(e);
-            logger.error("Failed to render the {} template: event={}, resource={}, error={}",
-                    templateLabel, request.getEvent(), request.getResource(), diagnostics);
-            throw new ValidationException(ValidationError
-                    .create("The " + templateLabel + " template cannot be rendered: " + diagnostics));
+            logger
+                    .error("Failed to render the {} template: event={}, resource={}, error={}", templateLabel,
+                            request.getEvent(), request.getResource(), diagnostics);
+            throw new ValidationException(
+                    ValidationError.create("The " + templateLabel + " template cannot be rendered: " + diagnostics));
         }
 
         return stringWriter.toString();
@@ -171,8 +174,8 @@ public class TemplateUtils {
 
     /**
      * Parses the template, refusing the legacy {@code ?html} built-in in terms the operator can act on. FreeMarker
-     * reports where it refused, which is checked against the source so that only that failure is answered with the
-     * edit and an unrelated syntax error is reported as it stands.
+     * reports where it refused, which is checked against the source so that only that failure is answered with the edit
+     * and an unrelated syntax error is reported as it stands.
      */
     private static Template parse(String templateLabel, String templateSource, Configuration cfg) throws IOException {
         try {
@@ -222,8 +225,7 @@ public class TemplateUtils {
     private static String parseFailureDescription(String templateLabel, IOException failure) {
         if (failure instanceof UnsupportedLegacyEscapeException legacyEscape) {
             return "The %s template cannot be rendered: line %d, column %d escapes a value with ?html, which is not"
-                    .formatted(templateLabel, legacyEscape.line(), legacyEscape.column())
-                    + LEGACY_ESCAPE_EDIT;
+                    .formatted(templateLabel, legacyEscape.line(), legacyEscape.column()) + LEGACY_ESCAPE_EDIT;
         }
         return "The " + templateLabel + " template cannot be parsed: " + failure.getMessage();
     }
@@ -250,15 +252,16 @@ public class TemplateUtils {
     }
 
     /**
-     * Payload-free description of a rendering failure. FreeMarker quotes the value that failed to
-     * evaluate in its message — {@code ${credential?number}} embeds the credential verbatim — so
-     * only the exception type and the position in the template are reported. The template is the
-     * operator's own content, so the position identifies the failing expression for them.
+     * Payload-free description of a rendering failure. FreeMarker quotes the value that failed to evaluate in its
+     * message — {@code ${credential?number}} embeds the credential verbatim — so only the exception type and the
+     * position in the template are reported. The template is the operator's own content, so the position identifies the
+     * failing expression for them.
      */
     static String renderFailureDiagnostics(Exception e) {
         if (e instanceof TemplateException templateException) {
-            return "%s at line %s, column %s".formatted(e.getClass().getSimpleName(),
-                    templateException.getLineNumber(), templateException.getColumnNumber());
+            return "%s at line %s, column %s"
+                    .formatted(e.getClass().getSimpleName(), templateException.getLineNumber(),
+                            templateException.getColumnNumber());
         }
         return e.getClass().getSimpleName();
     }

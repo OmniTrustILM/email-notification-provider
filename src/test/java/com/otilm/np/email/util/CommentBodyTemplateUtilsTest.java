@@ -1,7 +1,7 @@
 package com.otilm.np.email.util;
 
-import com.otilm.api.model.common.events.data.CommentEventData;
 import com.otilm.api.exception.ValidationException;
+import com.otilm.api.model.common.events.data.CommentEventData;
 import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequestDto;
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
@@ -54,8 +54,7 @@ class CommentBodyTemplateUtilsTest {
     @Test
     void aTemplateEscapingByHandIsRefusedWhereverItDoesSo() {
         for (String template : List
-                .of("<div>${notificationData.body?html}</div>",
-                        "<div>${notificationData.body ? html}</div>",
+                .of("<div>${notificationData.body?html}</div>", "<div>${notificationData.body ? html}</div>",
                         "<div>\t${notificationData.body?html}</div>",
                         "<#assign escaped = notificationData.body?html><div>${escaped}</div>",
                         "<#if notificationData.body?html == \"x\">y</#if>",
@@ -65,7 +64,9 @@ class CommentBodyTemplateUtilsTest {
                     .assertThrows(ValidationException.class,
                             () -> TemplateUtils.renderHtml("email content", template, request), template);
 
-            Assertions.assertTrue(refused.getMessage().contains("Remove the ?html"), template + " -> " + refused.getMessage());
+            Assertions
+                    .assertTrue(refused.getMessage().contains("Remove the ?html"),
+                            template + " -> " + refused.getMessage());
             Assertions.assertTrue(refused.getMessage().contains("?no_esc"), template + " -> " + refused.getMessage());
         }
     }
@@ -73,9 +74,10 @@ class CommentBodyTemplateUtilsTest {
     @Test
     void aBrokenTemplateIsNotSentToRemoveAnUnrelatedQueryString() {
         ValidationException refused = Assertions
-                .assertThrows(ValidationException.class, () -> TemplateUtils
-                        .renderHtml("email content",
-                                "<a href=\"https://example.test/view?html=true\">${unclosed</a>", request));
+                .assertThrows(ValidationException.class,
+                        () -> TemplateUtils
+                                .renderHtml("email content",
+                                        "<a href=\"https://example.test/view?html=true\">${unclosed</a>", request));
 
         Assertions.assertFalse(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
         Assertions.assertFalse(refused.getMessage().contains("remove"), refused.getMessage());
@@ -100,7 +102,10 @@ class CommentBodyTemplateUtilsTest {
 
     @Test
     void theSubjectIsPlainTextAndNotEscaped() {
-        String subject = TemplateUtils.renderPlainText("email subject", "Comment on ${notificationData.objectName} by ${notificationData.authorUsername}: ${notificationData.body}", request);
+        String subject = TemplateUtils
+                .renderPlainText("email subject",
+                        "Comment on ${notificationData.objectName} by ${notificationData.authorUsername}: ${notificationData.body}",
+                        request);
 
         Assertions.assertTrue(subject.contains(HOSTILE_BODY), subject);
         Assertions.assertFalse(subject.contains("&lt;"), subject);

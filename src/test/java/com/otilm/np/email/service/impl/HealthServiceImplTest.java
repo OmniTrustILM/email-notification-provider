@@ -4,11 +4,10 @@ import com.otilm.api.model.common.HealthDto;
 import com.otilm.api.model.common.HealthStatus;
 import com.otilm.np.email.service.NotificationInstanceService;
 import jakarta.mail.MessagingException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;

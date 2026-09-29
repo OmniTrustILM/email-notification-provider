@@ -5,14 +5,13 @@ import com.otilm.api.model.common.HealthStatus;
 import com.otilm.np.email.service.HealthService;
 import com.otilm.np.email.service.NotificationInstanceService;
 import jakarta.mail.MessagingException;
+import java.util.HashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class HealthServiceImpl implements HealthService {

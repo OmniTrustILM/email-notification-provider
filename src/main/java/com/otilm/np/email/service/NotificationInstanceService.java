@@ -13,15 +13,16 @@ public interface NotificationInstanceService {
 
     List<NotificationProviderInstanceDto> listNotificationInstances();
 
-    NotificationProviderInstanceDto createNotificationInstance(NotificationProviderInstanceRequestDto request) throws AlreadyExistException;
+    NotificationProviderInstanceDto createNotificationInstance(NotificationProviderInstanceRequestDto request)
+            throws AlreadyExistException;
 
     NotificationProviderInstanceDto getNotificationInstance(UUID uuid) throws NotFoundException;
 
-    NotificationProviderInstanceDto updateNotificationInstance(UUID uuid, NotificationProviderInstanceRequestDto request) throws NotFoundException;
+    NotificationProviderInstanceDto updateNotificationInstance(UUID uuid,
+            NotificationProviderInstanceRequestDto request) throws NotFoundException;
 
     void removeNotificationInstance(UUID uuid) throws NotFoundException;
 
     void sendNotification(UUID uuid, NotificationProviderNotifyRequestDto request) throws NotFoundException;
-
 
 }

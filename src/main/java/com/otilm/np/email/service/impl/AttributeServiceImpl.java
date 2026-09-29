@@ -17,12 +17,11 @@ import com.otilm.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.otilm.api.model.common.attribute.v3.DataAttributeV3;
 import com.otilm.core.util.AttributeDefinitionUtils;
 import com.otilm.np.email.service.AttributeService;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class AttributeServiceImpl implements AttributeService {
@@ -40,7 +39,8 @@ public class AttributeServiceImpl implements AttributeService {
     public static final String EMAIL_ADDRESS_REGEX = "^" + EMAIL_ADDRESS_PATTERN + "$";
 
     /** Regex matching one or more email addresses separated by ',' or ';' (surrounding whitespace allowed). */
-    public static final String EMAIL_ADDRESS_LIST_REGEX = "^\\s*" + EMAIL_ADDRESS_PATTERN + "(?:\\s*[,;]\\s*" + EMAIL_ADDRESS_PATTERN + ")*\\s*$";
+    public static final String EMAIL_ADDRESS_LIST_REGEX = "^\\s*" + EMAIL_ADDRESS_PATTERN + "(?:\\s*[,;]\\s*"
+            + EMAIL_ADDRESS_PATTERN + ")*\\s*$";
 
     public static final String DATA_SENDER_EMAIL_ADDRESS_UUID = "3a1aed46-7e45-4e13-b4c0-5d33e5dc73f8";
     public static final String DATA_SENDER_EMAIL_ADDRESS_NAME = "data_senderEmailAddress";
@@ -133,11 +133,11 @@ public class AttributeServiceImpl implements AttributeService {
 
     private static RegexpAttributeConstraint getEmailListRegexpConstraint() {
         return buildRegexpConstraint("Email address(es)",
-                "Invalid email address format. Separate multiple addresses with ',' or ';'.",
-                EMAIL_ADDRESS_LIST_REGEX);
+                "Invalid email address format. Separate multiple addresses with ',' or ';'.", EMAIL_ADDRESS_LIST_REGEX);
     }
 
-    private static RegexpAttributeConstraint buildRegexpConstraint(String description, String errorMessage, String regex) {
+    private static RegexpAttributeConstraint buildRegexpConstraint(String description, String errorMessage,
+            String regex) {
         RegexpAttributeConstraint regexpAttributeConstraint = new RegexpAttributeConstraint();
         regexpAttributeConstraint.setDescription(description);
         regexpAttributeConstraint.setErrorMessage(errorMessage);

@@ -20,6 +20,13 @@ import com.otilm.np.email.service.NotificationInstanceService;
 import com.otilm.np.email.util.TemplateUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.Base64;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,10 +35,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 public class NotificationInstanceServiceImpl implements NotificationInstanceService {
@@ -50,10 +53,9 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     private AttributeService attributeService;
 
     /**
-     * Whether DEBUG logging includes the notification request itself. The request carries values
-     * that must not reach logs by default — the certificate-registration credential among them —
-     * so payload logging is a separate, deliberate switch rather than a side effect of raising the
-     * log level.
+     * Whether DEBUG logging includes the notification request itself. The request carries values that must not reach
+     * logs by default — the certificate-registration credential among them — so payload logging is a separate,
+     * deliberate switch rather than a side effect of raising the log level.
      */
     private boolean logRequestPayload;
 
@@ -82,31 +84,36 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         List<NotificationInstance> instances;
         instances = notificationInstanceRepository.findAll();
         if (!instances.isEmpty()) {
-            return instances
-                    .stream().map(NotificationInstance::mapToDto)
-                    .collect(Collectors.toList());
+            return instances.stream().map(NotificationInstance::mapToDto).collect(Collectors.toList());
         }
         return List.of();
     }
 
     @Override
-    public NotificationProviderInstanceDto createNotificationInstance(NotificationProviderInstanceRequestDto request) throws AlreadyExistException {
+    public NotificationProviderInstanceDto createNotificationInstance(NotificationProviderInstanceRequestDto request)
+            throws AlreadyExistException {
         if (notificationInstanceRepository.findByName(request.getName()).isPresent()) {
             throw new AlreadyExistException(NotificationInstance.class, request.getName());
         }
 
-        final String emailFrom = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
+        final String emailFrom = AttributeDefinitionUtils
+                .getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME,
+                        request.getAttributes(), StringAttributeContentV2.class)
+                .getData();
 
-        final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
+        final String subject = AttributeDefinitionUtils
+                .getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(),
+                        StringAttributeContentV2.class)
+                .getData();
 
         final String contentTemplate = validatedContentTemplate(request);
 
         NotificationInstance notificationInstance = new NotificationInstance();
         notificationInstance.setUuid(UUID.randomUUID().toString());
         notificationInstance.setName(request.getName());
-        notificationInstance.setAttributes(AttributeDefinitionUtils.mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
+        notificationInstance
+                .setAttributes(AttributeDefinitionUtils
+                        .mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
         notificationInstance.setEmailFrom(emailFrom);
         notificationInstance.setSubject(subject);
         notificationInstance.setContentTemplate(contentTemplate);
@@ -117,8 +124,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     /**
-     * The content template the request carries, refused here when it will not render. An operator editing a template
-     * is told while they have it in front of them, rather than by a notification that failed to reach somebody.
+     * The content template the request carries, refused here when it will not render. An operator editing a template is
+     * told while they have it in front of them, rather than by a notification that failed to reach somebody.
      */
     private String validatedContentTemplate(NotificationProviderInstanceRequestDto request) {
         String contentTemplate = AttributeDefinitionUtils
@@ -140,26 +147,34 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
     @Override
     public NotificationProviderInstanceDto getNotificationInstance(UUID uuid) throws NotFoundException {
-        return notificationInstanceRepository.findByUuid(uuid)
+        return notificationInstanceRepository
+                .findByUuid(uuid)
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid))
                 .mapToDto();
     }
 
     @Override
-    public NotificationProviderInstanceDto updateNotificationInstance(UUID uuid, NotificationProviderInstanceRequestDto request) throws NotFoundException {
+    public NotificationProviderInstanceDto updateNotificationInstance(UUID uuid,
+            NotificationProviderInstanceRequestDto request) throws NotFoundException {
         NotificationInstance notificationInstance = notificationInstanceRepository
                 .findByUuid(uuid)
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
 
-        final String emailFrom = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
+        final String emailFrom = AttributeDefinitionUtils
+                .getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_SENDER_EMAIL_ADDRESS_NAME,
+                        request.getAttributes(), StringAttributeContentV2.class)
+                .getData();
 
-        final String subject = AttributeDefinitionUtils.getSingleItemAttributeContentValue(
-                AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(), StringAttributeContentV2.class).getData();
+        final String subject = AttributeDefinitionUtils
+                .getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_SUBJECT_NAME, request.getAttributes(),
+                        StringAttributeContentV2.class)
+                .getData();
 
         final String contentTemplate = validatedContentTemplate(request);
 
-        notificationInstance.setAttributes(AttributeDefinitionUtils.mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
+        notificationInstance
+                .setAttributes(AttributeDefinitionUtils
+                        .mergeAttributes(attributeService.getAttributes(request.getKind()), request.getAttributes()));
         notificationInstance.setEmailFrom(emailFrom);
         notificationInstance.setSubject(subject);
         notificationInstance.setContentTemplate(contentTemplate);
@@ -171,7 +186,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
     @Override
     public void removeNotificationInstance(UUID uuid) throws NotFoundException {
-        NotificationInstance instance = notificationInstanceRepository.findByUuid(uuid)
+        NotificationInstance instance = notificationInstanceRepository
+                .findByUuid(uuid)
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
 
         notificationInstanceRepository.delete(instance);
@@ -185,9 +201,11 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
                 .orElseThrow(() -> new NotFoundException(NotificationInstance.class, uuid));
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Request to send email received: {}", logRequestPayload
-                    ? TemplateUtils.describeRequestForDebug(request)
-                    : TemplateUtils.summarizeRequest(request));
+            logger
+                    .debug("Request to send email received: {}",
+                            logRequestPayload
+                                    ? TemplateUtils.describeRequestForDebug(request)
+                                    : TemplateUtils.summarizeRequest(request));
         }
 
         MimeMessage mimeMessage = emailSender.createMimeMessage();
@@ -214,7 +232,9 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
 
         emailSender.send(mimeMessage);
         if (logger.isInfoEnabled()) {
-            logger.info("Notification email sent to {} recipients: {}", recipients.length, String.join(", ", recipients));
+            logger
+                    .info("Notification email sent to {} recipients: {}", recipients.length,
+                            String.join(", ", recipients));
         }
     }
 
@@ -230,17 +250,20 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         }
         if (to.isEmpty()) {
             int recipientCount = recipients == null ? 0 : recipients.size();
-            logger.warn("No valid email address could be resolved from {} recipient(s); all addresses were empty or invalid", recipientCount);
-            throw new ValidationException(List.of(
-                    ValidationError.create("No valid email address was provided. All recipient addresses were empty or invalid.")));
+            logger
+                    .warn("No valid email address could be resolved from {} recipient(s); all addresses were empty or invalid",
+                            recipientCount);
+            throw new ValidationException(List
+                    .of(ValidationError
+                            .create("No valid email address was provided. All recipient addresses were empty or invalid.")));
         }
         return to.toArray(new String[0]);
     }
 
     /**
-     * Collects valid email addresses for a single recipient from its direct email field and its
-     * mapped attribute(s). Returns whether the recipient supplied any non-blank email value,
-     * regardless of whether those values turned out to be valid.
+     * Collects valid email addresses for a single recipient from its direct email field and its mapped attribute(s).
+     * Returns whether the recipient supplied any non-blank email value, regardless of whether those values turned out
+     * to be valid.
      */
     private boolean collectRecipientEmails(NotificationRecipientDto recipient, Set<String> to) {
         boolean emailProvided = false;
@@ -259,8 +282,9 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         if (recipient.getMappedAttributes() == null || recipient.getMappedAttributes().isEmpty()) {
             return false;
         }
-        List<StringAttributeContentV3> attributeContents = AttributeDefinitionUtils.getAttributeContentValue(
-                AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME, recipient.getMappedAttributes(), StringAttributeContentV3.class);
+        List<StringAttributeContentV3> attributeContents = AttributeDefinitionUtils
+                .getAttributeContentValue(AttributeServiceImpl.DATA_RECIPIENT_EMAIL_ADDRESS_NAME,
+                        recipient.getMappedAttributes(), StringAttributeContentV3.class);
         if (attributeContents == null) {
             return false;
         }
@@ -275,8 +299,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     /**
-     * Splits a raw mapped-attribute value on ',' / ';', then validates and adds each address to
-     * {@code target}. Used for the mapped attribute, whose content may carry several addresses.
+     * Splits a raw mapped-attribute value on ',' / ';', then validates and adds each address to {@code target}. Used
+     * for the mapped attribute, whose content may carry several addresses.
      */
     private void collectValidEmails(String rawValue, Set<String> target) {
         for (String token : rawValue.split(EMAIL_ADDRESS_DELIMITER_REGEX)) {
@@ -285,9 +309,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
     }
 
     /**
-     * Adds a single, already-trimmed address to {@code target} when it is a valid email. Blank or
-     * invalid values are skipped (invalid ones logged) so one malformed entry does not abort
-     * delivery to the remaining recipients.
+     * Adds a single, already-trimmed address to {@code target} when it is a valid email. Blank or invalid values are
+     * skipped (invalid ones logged) so one malformed entry does not abort delivery to the remaining recipients.
      */
     private void addValidEmail(String email, Set<String> target) {
         if (email.isEmpty()) {
