@@ -308,6 +308,7 @@ class NotificationInstanceServiceImplTest {
                         .getEncoder()
                         .encodeToString("<div>${notificationData.subjectDn?html}</div>".getBytes()));
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(instance));
+        when(emailSender.createMimeMessage()).thenReturn(new MimeMessage((jakarta.mail.Session) null));
 
         NotificationRecipientDto recipient = new NotificationRecipientDto();
         recipient.setEmail("to@example.com");

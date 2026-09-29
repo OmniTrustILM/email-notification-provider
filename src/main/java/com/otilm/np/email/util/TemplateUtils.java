@@ -215,11 +215,6 @@ public class TemplateUtils {
     }
 
     /**
-     * FreeMarker refuses the legacy {@code ?html} once values are escaped for it, and says so in terms of its own
-     * built-ins. The edit is named only when that is what failed, so a template that merely carries the text
-     * somewhere, in a URL for one, is not sent to alter it.
-     */
-    /**
      * What the operator is told about a template that will not parse. Their own syntax error is reported in
      * FreeMarker's words, which name the position and the construct; the legacy escape is reported in ours, since its
      * refusal is this connector's and the edit is what matters.
