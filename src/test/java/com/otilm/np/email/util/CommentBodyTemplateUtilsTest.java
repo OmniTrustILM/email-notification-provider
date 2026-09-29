@@ -72,6 +72,25 @@ class CommentBodyTemplateUtilsTest {
     }
 
     @Test
+    void theRefusalNamesWhereTheEscapeIsWritten() {
+        ValidationException refused = Assertions
+                .assertThrows(ValidationException.class, () -> TemplateUtils
+                        .renderHtml("email content", "<div>${notificationData.body?html}</div>", request));
+
+        Assertions.assertTrue(refused.getMessage().contains("line 1, column 30"), refused.getMessage());
+    }
+
+    // A tab counts as one column, so the position sends the author to the escape rather than past it
+    @Test
+    void aTabAheadOfTheEscapeCountsAsOneColumn() {
+        ValidationException refused = Assertions
+                .assertThrows(ValidationException.class, () -> TemplateUtils
+                        .renderHtml("email content", "<div>\t${notificationData.body?html}</div>", request));
+
+        Assertions.assertTrue(refused.getMessage().contains("line 1, column 31"), refused.getMessage());
+    }
+
+    @Test
     void aBrokenTemplateIsNotSentToRemoveAnUnrelatedQueryString() {
         ValidationException refused = Assertions
                 .assertThrows(ValidationException.class,
@@ -80,7 +99,7 @@ class CommentBodyTemplateUtilsTest {
                                         "<a href=\"https://example.test/view?html=true\">${unclosed</a>", request));
 
         Assertions.assertFalse(refused.getMessage().contains("?esc?markup_string"), refused.getMessage());
-        Assertions.assertFalse(refused.getMessage().contains("remove"), refused.getMessage());
+        Assertions.assertFalse(refused.getMessage().contains("Remove the ?html"), refused.getMessage());
     }
 
     @Test

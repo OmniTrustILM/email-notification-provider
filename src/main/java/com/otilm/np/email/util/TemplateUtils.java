@@ -34,9 +34,6 @@ public class TemplateUtils {
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final String LEGACY_ESCAPE = "html";
-    private static final String LEGACY_ESCAPE_EDIT = " accepted now that values are escaped on their way in. Remove"
-            + " the ?html. A value that has to stay markup takes ?no_esc instead, and one whose escaped text is read"
-            + " further on, compared or measured, takes ?esc?markup_string with ?no_esc closing the expression.";
 
     private TemplateUtils() {
     }
@@ -224,17 +221,20 @@ public class TemplateUtils {
      */
     private static String parseFailureDescription(String templateLabel, IOException failure) {
         if (failure instanceof UnsupportedLegacyEscapeException legacyEscape) {
-            return "The %s template cannot be rendered: line %d, column %d escapes a value with ?html, which is not"
-                    .formatted(templateLabel, legacyEscape.line(), legacyEscape.column()) + LEGACY_ESCAPE_EDIT;
+            return ("The %s template cannot be rendered: line %d, column %d escapes a value with ?html, which is not"
+                    + " accepted now that values are escaped on their way into the email. Remove the ?html. A value"
+                    + " that has to stay markup takes ?no_esc instead, and one whose escaped text is read further on,"
+                    + " compared or measured, takes ?esc?markup_string with ?no_esc closing the expression.")
+                    .formatted(templateLabel, legacyEscape.line(), legacyEscape.column());
         }
-        return "The " + templateLabel + " template cannot be parsed: " + failure.getMessage();
+        return "The %s template cannot be rendered: %s".formatted(templateLabel, failure.getMessage());
     }
 
     /** A refused legacy escape, carrying where it was written so the operator is sent to it. */
     private static final class UnsupportedLegacyEscapeException extends IOException {
 
-        private final transient int line;
-        private final transient int column;
+        private final int line;
+        private final int column;
 
         private UnsupportedLegacyEscapeException(ParseException refusal) {
             super(refusal.getMessage(), refusal);
