@@ -20,9 +20,12 @@ import com.otilm.np.email.service.NotificationInstanceService;
 import com.otilm.np.email.util.TemplateUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import java.util.*;
+import java.util.Base64;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +83,7 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         List<NotificationInstance> instances;
         instances = notificationInstanceRepository.findAll();
         if (!instances.isEmpty()) {
-            return instances.stream().map(NotificationInstance::mapToDto).collect(Collectors.toList());
+            return instances.stream().map(NotificationInstance::mapToDto).toList();
         }
         return List.of();
     }

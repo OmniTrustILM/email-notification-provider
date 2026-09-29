@@ -1,7 +1,11 @@
 package com.otilm.np.email;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.otilm.api.exception.*;
+import com.otilm.api.exception.AlreadyExistException;
+import com.otilm.api.exception.NotDeletableException;
+import com.otilm.api.exception.NotFoundException;
+import com.otilm.api.exception.ValidationError;
+import com.otilm.api.exception.ValidationException;
 import com.otilm.np.email.dto.ApiErrorResponseDto;
 import com.otilm.np.email.dto.ErrorMessageDto;
 import com.otilm.np.email.exception.NotificationException;
@@ -27,6 +31,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class ExceptionHandlingAdvice {
 
     private static final Logger log = LoggerFactory.getLogger(ExceptionHandlingAdvice.class);
+    private static final String ARGUMENTS_NOT_VALID = "Arguments not valid";
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
     protected ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
@@ -48,7 +53,7 @@ public class ExceptionHandlingAdvice {
             errors.add(errorMessage);
         }
         ApiErrorResponseDto apiErrorResponseDto = new ApiErrorResponseDto(80, HttpStatus.BAD_REQUEST,
-                "Arguments not valid", errors);
+                ARGUMENTS_NOT_VALID, errors);
         return new ResponseEntity<>(apiErrorResponseDto, new HttpHeaders(), apiErrorResponseDto.getStatus());
     }
 
@@ -60,7 +65,7 @@ public class ExceptionHandlingAdvice {
             errorMessage.setStacktrace(ExceptionUtils.getStackTrace(ex));
         }
         ApiErrorResponseDto apiErrorResponseDto = new ApiErrorResponseDto(81, HttpStatus.BAD_REQUEST,
-                "Arguments not valid", errorMessage);
+                ARGUMENTS_NOT_VALID, errorMessage);
         apiErrorResponseDto.setTimestamp(Instant.now().toEpochMilli());
         log.error("{}: {}", apiErrorResponseDto.getMessage(), ExceptionUtils.getStackTrace(ex));
         return new ResponseEntity<>(apiErrorResponseDto, new HttpHeaders(), apiErrorResponseDto.getStatus());
@@ -85,7 +90,7 @@ public class ExceptionHandlingAdvice {
             }
         }
         ApiErrorResponseDto apiErrorResponseDto = new ApiErrorResponseDto(81, HttpStatus.BAD_REQUEST,
-                "Arguments not valid", errorMessage);
+                ARGUMENTS_NOT_VALID, errorMessage);
         apiErrorResponseDto.setTimestamp(Instant.now().toEpochMilli());
         log.error("{}: {}", apiErrorResponseDto.getMessage(), ExceptionUtils.getStackTrace(ex));
         return new ResponseEntity<>(apiErrorResponseDto, new HttpHeaders(), apiErrorResponseDto.getStatus());
