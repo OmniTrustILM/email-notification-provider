@@ -1,0 +1,8 @@
+# Revisions to skip when following blame. Add only commits that change formatting
+# and nothing else, and list the full hash: git blame --ignore-revs-file is exact.
+# Configure a clone once with:
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub reads this file on its own.
+
+# Format the sources with the shared Eclipse formatter
+34415df6c139c9c0c3c6d44c5ae1d707ac844db7
