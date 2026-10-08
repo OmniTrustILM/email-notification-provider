@@ -1,6 +1,5 @@
 package com.otilm.np.email;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.otilm.api.exception.AlreadyExistException;
 import com.otilm.api.exception.NotDeletableException;
 import com.otilm.api.exception.NotFoundException;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 @RestControllerAdvice
 public class ExceptionHandlingAdvice {
@@ -75,9 +75,8 @@ public class ExceptionHandlingAdvice {
     public ResponseEntity<Object> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         ErrorMessageDto errorMessage;
         final Throwable cause = ex.getCause();
-        if (cause instanceof InvalidFormatException) {
-            InvalidFormatException exCause = (InvalidFormatException) ex.getCause();
-            errorMessage = new ErrorMessageDto(exCause.getPath().get(0).getFieldName(),
+        if (cause instanceof InvalidFormatException exCause) {
+            errorMessage = new ErrorMessageDto(exCause.getPath().get(0).getPropertyName(),
                     exCause.getClass().getSimpleName(), exCause.getValue().toString());
             if (log.isDebugEnabled()) {
                 errorMessage.setStacktrace(ExceptionUtils.getStackTrace(exCause));
