@@ -1,10 +1,13 @@
+# The Maven repository the build reads; empty unless one is passed as the m2 build context.
+FROM scratch AS m2
+
 # Build stage
 FROM maven:3.9.16-eclipse-temurin-21 AS build
 COPY src /home/app/src
 COPY pom.xml /home/app
 COPY settings.xml /root/.m2/settings.xml
 COPY docker /home/app/docker
-RUN mvn -f /home/app/pom.xml clean package
+RUN --mount=type=bind,from=m2,target=/root/.m2/repository,rw mvn -f /home/app/pom.xml clean package
 
 # Package stage
 FROM eclipse-temurin:21.0.11_10-jre-alpine
