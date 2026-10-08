@@ -1,0 +1,5 @@
+{
+  "status" : 422,
+  "contentType" : "application/json",
+  "body" : [ "No valid email address was provided. All recipient addresses were empty or invalid." ]
+}

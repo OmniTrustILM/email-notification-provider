@@ -1,0 +1,5 @@
+{
+  "status" : 422,
+  "contentType" : "application/json",
+  "body" : [ "Unsupported kind SMS" ]
+}

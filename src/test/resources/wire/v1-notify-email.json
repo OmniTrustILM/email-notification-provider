@@ -1,0 +1,7 @@
+{
+  "from" : "sender@example.com",
+  "to" : [ "jane@example.com", "first@example.com", "second@example.com" ],
+  "subject" : "Certificate CN=<img src=x onerror=alert(1)>, O=\"Quoted & Co\" is revoked",
+  "contentType" : "text/html;charset=utf-8",
+  "body" : "<p>CN=&lt;img src=x onerror=alert(1)&gt;, O=&quot;Quoted &amp; Co&quot;</p><h3>Certificate revoked</h3>\n<ul>\n  <li>Subject: CN=&lt;img src=x onerror=alert(1)&gt;, O=&quot;Quoted &amp; Co&quot;</li>\n  <li>Serial number: 4a25c46b33ee052d242023f5dfaaafd3694858a4</li>\n  <li>Event: certificate_status_changed, resource: certificates</li>\n  <li>Recipient: Jane &lt;Doe&gt;</li>\n  <li>Owner: Owner &amp; &lt;Admin&gt;</li>\n  <li>Markup kept: <b>bold</b></li>\n</ul>\n<a href=\"https://ilm.example.com/certificates/detail/7de49ef9-8244-4e8f-95b8-82205ae0ad48\">Open</a>\n"
+}

@@ -1,0 +1,31 @@
+{
+  "status" : 200,
+  "contentType" : "application/json",
+  "body" : [ {
+    "constraints" : [ {
+      "data" : "^\\s*[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*(?:\\s*[,;]\\s*[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)*\\s*$",
+      "description" : "Email address(es)",
+      "errorMessage" : "Invalid email address format. Separate multiple addresses with ',' or ';'.",
+      "type" : "regExp"
+    } ],
+    "contentType" : "string",
+    "description" : "Email address(es) to which the email will be sent. Multiple addresses may be provided either as a single value separated by ',' or ';', or as multiple attribute content items. Each address is validated individually and invalid addresses are skipped.",
+    "name" : "data_recipientEmailAddress",
+    "properties" : {
+      "extensibleList" : false,
+      "group" : null,
+      "label" : "Recipient email address",
+      "list" : true,
+      "multiSelect" : true,
+      "protectionLevel" : "none",
+      "readOnly" : false,
+      "required" : false,
+      "resource" : null,
+      "visible" : true
+    },
+    "schemaVersion" : "v3",
+    "type" : "data",
+    "uuid" : "522f2a57-4db2-408e-b7ed-7aee4bd96282",
+    "version" : 3
+  } ]
+}

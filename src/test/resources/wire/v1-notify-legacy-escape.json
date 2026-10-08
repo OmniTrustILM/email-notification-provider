@@ -1,0 +1,5 @@
+{
+  "status" : 422,
+  "contentType" : "application/json",
+  "body" : [ "The email content template cannot be rendered: line 1, column 33 escapes a value with ?html, which is not accepted now that values are escaped on their way into the email. Remove the ?html. A value that has to stay markup takes ?no_esc instead, and one whose escaped text is read further on, compared or measured, takes ?esc?markup_string with ?no_esc closing the expression." ]
+}

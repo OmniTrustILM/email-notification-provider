@@ -1,0 +1,15 @@
+{
+  "status" : 500,
+  "contentType" : "application/json",
+  "body" : {
+    "code" : 99,
+    "errors" : [ {
+      "detail" : "Invalid UUID string: not-a-uuid",
+      "error" : "Unexpected error",
+      "type" : "IllegalArgumentException"
+    } ],
+    "message" : "Unexpected exception occurred",
+    "status" : "INTERNAL_SERVER_ERROR",
+    "timestamp" : "<millis>"
+  }
+}
