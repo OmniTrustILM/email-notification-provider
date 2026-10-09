@@ -11,6 +11,7 @@ import com.otilm.np.email.exception.NotificationException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,23 @@ class TemplateUtilsErrorTest {
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, template, request));
 
+        assertTrue(ex.getMessage().contains("template cannot be rendered"), ex.getMessage());
         assertTrue(ex.getMessage().contains("line 1"), ex.getMessage());
+        assertNoPayloadExposure(ex);
+    }
+
+    /** Saving a template, the startup check and a send that reaches the template report the same sentence. */
+    @Test
+    void contentTemplateFailureReadsAsTheSendFailure() {
+        String malformed = "<div>${unclosed</div>";
+        NotificationProviderNotifyRequestDto request = request();
+        ValidationException atSend = assertThrows(ValidationException.class,
+                () -> TemplateUtils.renderHtml(TemplateUtils.CONTENT_TEMPLATE_LABEL, malformed, request));
+
+        Optional<String> failure = TemplateUtils.contentTemplateFailure(malformed);
+
+        assertTrue(failure.isPresent());
+        assertEquals(atSend.getErrors().getFirst().getErrorDescription(), failure.get());
     }
 
     @Test

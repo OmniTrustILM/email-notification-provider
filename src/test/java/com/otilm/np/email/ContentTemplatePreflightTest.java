@@ -84,18 +84,26 @@ class ContentTemplatePreflightTest {
         when(repository.findAll())
                 .thenReturn(List
                         .of(instance("plain", "<div>${notificationData.body}</div>"),
-                                instance("malformed", "<div>${unclosed</div>")));
+                                instance("malformed", "<div>${unclosed</div>"),
+                                instance("escaped by hand", "<div>${notificationData.body?html}</div>")));
 
         new ContentTemplatePreflight(repository).reportUnrenderableTemplates();
 
-        Assertions.assertEquals(1, logAppender.list.size(), logAppender.list.toString());
-        ILoggingEvent event = logAppender.list.getFirst();
-        Assertions.assertEquals(Level.WARN, event.getLevel());
+        Assertions.assertEquals(2, logAppender.list.size(), logAppender.list.toString());
+        Assertions.assertTrue(logAppender.list.stream().allMatch(event -> event.getLevel() == Level.WARN));
         Assertions
-                .assertTrue(event
+                .assertTrue(logAppender.list
+                        .get(0)
                         .getFormattedMessage()
                         .startsWith("Notification instance 'malformed': The email content template cannot be rendered"),
-                        event.getFormattedMessage());
+                        logAppender.list.get(0).getFormattedMessage());
+        Assertions
+                .assertTrue(logAppender.list
+                        .get(1)
+                        .getFormattedMessage()
+                        .startsWith(
+                                "Notification instance 'escaped by hand': The email content template cannot be rendered"),
+                        logAppender.list.get(1).getFormattedMessage());
     }
 
     /** The check only reports; a store it cannot read must not keep the connector from starting. */

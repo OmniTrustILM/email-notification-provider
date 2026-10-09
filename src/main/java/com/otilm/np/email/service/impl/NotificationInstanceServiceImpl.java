@@ -217,7 +217,8 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
         String htmlMsg = notificationInstance.getContentTemplate();
         String Subject = notificationInstance.getSubject();
 
-        final String substitutedHtmlMsg = TemplateUtils.renderHtml("email content", htmlMsg, request);
+        final String substitutedHtmlMsg = TemplateUtils
+                .renderHtml(TemplateUtils.CONTENT_TEMPLATE_LABEL, htmlMsg, request);
         final String substitutedSubject = TemplateUtils.renderPlainText("email subject", Subject, request);
 
         logger.debug("Resolving recipients from request input: {}", request.getRecipients());
