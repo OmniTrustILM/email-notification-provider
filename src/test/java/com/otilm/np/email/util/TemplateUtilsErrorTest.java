@@ -58,6 +58,18 @@ class TemplateUtilsErrorTest {
         assertNoPayloadExposure(ex);
     }
 
+    /** A content template renders the notification; it has no use for creating Java objects. */
+    @Test
+    void templateCannotCreateObjects() {
+        NotificationProviderNotifyRequestDto request = request();
+        String template = "<#assign made = \"freemarker.template.SimpleHash\"?new()>made";
+
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> TemplateUtils.renderHtml(TEMPLATE_LABEL, template, request));
+
+        assertTrue(ex.getMessage().contains("line 1"), ex.getMessage());
+    }
+
     @Test
     void unresolvedReferenceThrowsProcessingError() {
         NotificationProviderNotifyRequestDto request = request();

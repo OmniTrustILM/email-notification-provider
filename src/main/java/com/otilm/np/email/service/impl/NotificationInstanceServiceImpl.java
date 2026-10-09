@@ -4,6 +4,7 @@ import com.otilm.api.exception.AlreadyExistException;
 import com.otilm.api.exception.NotFoundException;
 import com.otilm.api.exception.ValidationError;
 import com.otilm.api.exception.ValidationException;
+import com.otilm.api.model.common.attribute.common.content.data.CodeBlockAttributeContentData;
 import com.otilm.api.model.common.attribute.v2.content.CodeBlockAttributeContentV2;
 import com.otilm.api.model.common.attribute.v2.content.StringAttributeContentV2;
 import com.otilm.api.model.common.attribute.v3.content.StringAttributeContentV3;
@@ -127,11 +128,14 @@ public class NotificationInstanceServiceImpl implements NotificationInstanceServ
      * told while they have it in front of them, rather than by a notification that failed to reach somebody.
      */
     private String validatedContentTemplate(NotificationProviderInstanceRequestDto request) {
-        String contentTemplate = AttributeDefinitionUtils
+        CodeBlockAttributeContentData data = AttributeDefinitionUtils
                 .getSingleItemAttributeContentValue(AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME,
                         request.getAttributes(), CodeBlockAttributeContentV2.class)
-                .getData()
-                .getCode();
+                .getData();
+        String contentTemplate = data == null ? null : data.getCode();
+        if (contentTemplate == null) {
+            throw new ValidationException(List.of(ValidationError.create("The content template is missing.")));
+        }
         String decoded;
         try {
             decoded = new String(Base64.getDecoder().decode(contentTemplate));

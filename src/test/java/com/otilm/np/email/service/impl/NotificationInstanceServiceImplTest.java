@@ -154,6 +154,45 @@ class NotificationInstanceServiceImplTest {
         verify(repository, never()).save(any());
     }
 
+    @Test
+    void createNotificationInstance_refusesATemplateWithoutCode() {
+        when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.empty());
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        CodeBlockAttributeContentV2 codeContent = new CodeBlockAttributeContentV2();
+        codeContent.setData(new CodeBlockAttributeContentData(ProgrammingLanguageEnum.HTML, null));
+        contentTemplateAttribute(request).setContent(List.<BaseAttributeContentV2<?>>of(codeContent));
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.createNotificationInstance(request));
+
+        assertEquals("The content template is missing.", refused.getErrors().getFirst().getErrorDescription());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void createNotificationInstance_refusesAMissingTemplate() {
+        when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.empty());
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        RequestAttributeV2 template = contentTemplateAttribute(request);
+        request.setAttributes(request.getAttributes().stream().filter(attribute -> attribute != template).toList());
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.createNotificationInstance(request));
+
+        assertEquals("The content template is missing.", refused.getErrors().getFirst().getErrorDescription());
+        verify(repository, never()).save(any());
+    }
+
+    private static RequestAttributeV2 contentTemplateAttribute(NotificationProviderInstanceRequestDto request) {
+        return request
+                .getAttributes()
+                .stream()
+                .map(RequestAttributeV2.class::cast)
+                .filter(attribute -> AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME.equals(attribute.getName()))
+                .findFirst()
+                .orElseThrow();
+    }
+
     private static void setContentTemplate(NotificationProviderInstanceRequestDto request, String template) {
         CodeBlockAttributeContentV2 codeContent = new CodeBlockAttributeContentV2();
         codeContent

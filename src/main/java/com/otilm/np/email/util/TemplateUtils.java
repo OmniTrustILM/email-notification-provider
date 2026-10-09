@@ -12,6 +12,7 @@ import freemarker.core.HTMLOutputFormat;
 import freemarker.core.OutputFormat;
 import freemarker.core.ParseException;
 import freemarker.core.PlainTextOutputFormat;
+import freemarker.core.TemplateClassResolver;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -163,6 +164,8 @@ public class TemplateUtils {
         cfg.setLogTemplateExceptions(false);
         cfg.setWrapUncheckedExceptions(true);
         cfg.setOutputFormat(outputFormat);
+        // A template renders the notification and has no use for creating Java objects
+        cfg.setNewBuiltinClassResolver(TemplateClassResolver.ALLOWS_NOTHING_RESOLVER);
         // A parse failure's column is read as an offset into the source, so a tab must count as the one character it
         // is rather than as a jump to the next tab stop
         cfg.setTabSize(1);
