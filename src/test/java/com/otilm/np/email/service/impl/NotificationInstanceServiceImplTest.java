@@ -26,6 +26,7 @@ import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequ
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
+import com.otilm.core.util.AttributeDefinitionUtils;
 import com.otilm.np.email.dao.entity.NotificationInstance;
 import com.otilm.np.email.dao.repository.NotificationInstanceRepository;
 import com.otilm.np.email.service.AttributeService;
@@ -198,6 +199,10 @@ class NotificationInstanceServiceImplTest {
     void updateNotificationInstance_refusesATemplateWithoutCode() {
         UUID uuid = UUID.randomUUID();
         NotificationInstance stored = buildPersistedInstance(uuid);
+        stored.setEmailFrom("stale@example.com");
+        stored.setSubject("stale");
+        stored.setAttributes(new AttributeServiceImpl().getAttributes("EMAIL"));
+        String storedAttributes = AttributeDefinitionUtils.serialize(stored.getAttributes());
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(stored));
         NotificationProviderInstanceRequestDto request = buildInstanceRequest();
         setContentTemplateCode(request, null);
@@ -207,8 +212,9 @@ class NotificationInstanceServiceImplTest {
 
         assertEquals("The content template is missing.", refused.getErrors().getFirst().getErrorDescription());
         verify(repository, never()).save(any());
-        assertEquals(EMAIL_FROM, stored.getEmailFrom(), "a refused update must leave the instance as it was");
-        assertEquals(SUBJECT, stored.getSubject());
+        assertEquals("stale@example.com", stored.getEmailFrom(), "a refused update must leave the instance as it was");
+        assertEquals("stale", stored.getSubject());
+        assertEquals(storedAttributes, AttributeDefinitionUtils.serialize(stored.getAttributes()));
         assertEquals(TEMPLATE_PLAINTEXT, stored.getContentTemplate());
     }
 
