@@ -26,6 +26,7 @@ import com.otilm.api.model.connector.notification.NotificationProviderNotifyRequ
 import com.otilm.api.model.connector.notification.NotificationRecipientDto;
 import com.otilm.api.model.core.auth.Resource;
 import com.otilm.api.model.core.other.ResourceEvent;
+import com.otilm.core.util.AttributeDefinitionUtils;
 import com.otilm.np.email.dao.entity.NotificationInstance;
 import com.otilm.np.email.dao.repository.NotificationInstanceRepository;
 import com.otilm.np.email.service.AttributeService;
@@ -154,17 +155,88 @@ class NotificationInstanceServiceImplTest {
         verify(repository, never()).save(any());
     }
 
-    private static void setContentTemplate(NotificationProviderInstanceRequestDto request, String template) {
-        CodeBlockAttributeContentV2 codeContent = new CodeBlockAttributeContentV2();
-        codeContent
-                .setData(new CodeBlockAttributeContentData(ProgrammingLanguageEnum.HTML,
-                        Base64.getEncoder().encodeToString(template.getBytes())));
-        request
+    @Test
+    void createNotificationInstance_refusesATemplateWithoutCode() {
+        when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.empty());
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        setContentTemplateCode(request, null);
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.createNotificationInstance(request));
+
+        assertEquals("The content template is missing.", refused.getErrors().getFirst().getErrorDescription());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void createNotificationInstance_refusesAMissingTemplate() {
+        when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.empty());
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        RequestAttributeV2 template = contentTemplateAttribute(request);
+        request.setAttributes(request.getAttributes().stream().filter(attribute -> attribute != template).toList());
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.createNotificationInstance(request));
+
+        assertEquals("The content template is missing.", refused.getErrors().getFirst().getErrorDescription());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void createNotificationInstance_refusesATemplateThatCannotBeRead() {
+        when(repository.findByName(INSTANCE_NAME)).thenReturn(Optional.empty());
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        setContentTemplateCode(request, "<div>not base64</div>");
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.createNotificationInstance(request));
+
+        assertEquals("The content template could not be read.", refused.getErrors().getFirst().getErrorDescription());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void updateNotificationInstance_refusesATemplateWithoutCode() {
+        UUID uuid = UUID.randomUUID();
+        NotificationInstance stored = buildPersistedInstance(uuid);
+        stored.setEmailFrom("stale@example.com");
+        stored.setSubject("stale");
+        stored.setAttributes(new AttributeServiceImpl().getAttributes("EMAIL"));
+        String storedAttributes = AttributeDefinitionUtils.serialize(stored.getAttributes());
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(stored));
+        NotificationProviderInstanceRequestDto request = buildInstanceRequest();
+        setContentTemplateCode(request, null);
+
+        ValidationException refused = assertThrows(ValidationException.class,
+                () -> service.updateNotificationInstance(uuid, request));
+
+        assertEquals("The content template is missing.", refused.getErrors().getFirst().getErrorDescription());
+        verify(repository, never()).save(any());
+        assertEquals("stale@example.com", stored.getEmailFrom(), "a refused update must leave the instance as it was");
+        assertEquals("stale", stored.getSubject());
+        assertEquals(storedAttributes, AttributeDefinitionUtils.serialize(stored.getAttributes()));
+        assertEquals(TEMPLATE_PLAINTEXT, stored.getContentTemplate());
+    }
+
+    private static RequestAttributeV2 contentTemplateAttribute(NotificationProviderInstanceRequestDto request) {
+        return request
                 .getAttributes()
                 .stream()
                 .map(RequestAttributeV2.class::cast)
                 .filter(attribute -> AttributeServiceImpl.DATA_CONTENT_TEMPLATE_NAME.equals(attribute.getName()))
-                .forEach(attribute -> attribute.setContent(List.<BaseAttributeContentV2<?>>of(codeContent)));
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static void setContentTemplate(NotificationProviderInstanceRequestDto request, String template) {
+        setContentTemplateCode(request, Base64.getEncoder().encodeToString(template.getBytes()));
+    }
+
+    /** @param code the content template as the platform sends it, normally Base64 encoded */
+    private static void setContentTemplateCode(NotificationProviderInstanceRequestDto request, String code) {
+        CodeBlockAttributeContentV2 codeContent = new CodeBlockAttributeContentV2();
+        codeContent.setData(new CodeBlockAttributeContentData(ProgrammingLanguageEnum.HTML, code));
+        contentTemplateAttribute(request).setContent(List.<BaseAttributeContentV2<?>>of(codeContent));
     }
 
     @Test

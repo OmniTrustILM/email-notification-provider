@@ -1,14 +1,22 @@
 package com.otilm.np.email;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.otilm.np.email.dao.entity.NotificationInstance;
 import com.otilm.np.email.dao.repository.NotificationInstanceRepository;
 import java.util.Base64;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import static org.mockito.Mockito.when;
 
@@ -17,6 +25,21 @@ class ContentTemplatePreflightTest {
 
     @Mock
     private NotificationInstanceRepository repository;
+
+    private ListAppender<ILoggingEvent> logAppender;
+
+    @BeforeEach
+    void captureLogs() {
+        logAppender = new ListAppender<>();
+        logAppender.start();
+        ((Logger) LoggerFactory.getLogger(ContentTemplatePreflight.class)).addAppender(logAppender);
+    }
+
+    @AfterEach
+    void releaseLogs() {
+        ((Logger) LoggerFactory.getLogger(ContentTemplatePreflight.class)).detachAppender(logAppender);
+        logAppender.stop();
+    }
 
     private static NotificationInstance instance(String name, String contentTemplate) {
         NotificationInstance instance = new NotificationInstance();
@@ -54,5 +77,47 @@ class ContentTemplatePreflightTest {
 
         Assertions.assertEquals(1, reported.size());
         Assertions.assertTrue(reported.getFirst().startsWith("'not base64'"), reported.toString());
+    }
+
+    @Test
+    void reportsEachInstanceWhoseTemplateWillNotRenderAtWarn() {
+        when(repository.findAll())
+                .thenReturn(List
+                        .of(instance("plain", "<div>${notificationData.body}</div>"),
+                                instance("malformed", "<div>${unclosed</div>"),
+                                instance("escaped by hand", "<div>${notificationData.body?html}</div>")));
+
+        new ContentTemplatePreflight(repository).reportUnrenderableTemplates();
+
+        Assertions.assertEquals(2, logAppender.list.size(), logAppender.list.toString());
+        Assertions.assertTrue(logAppender.list.stream().allMatch(event -> event.getLevel() == Level.WARN));
+        Assertions
+                .assertTrue(logAppender.list
+                        .get(0)
+                        .getFormattedMessage()
+                        .startsWith("Notification instance 'malformed': The email content template cannot be rendered"),
+                        logAppender.list.get(0).getFormattedMessage());
+        Assertions
+                .assertTrue(logAppender.list
+                        .get(1)
+                        .getFormattedMessage()
+                        .startsWith(
+                                "Notification instance 'escaped by hand': The email content template cannot be rendered"),
+                        logAppender.list.get(1).getFormattedMessage());
+    }
+
+    /** The check only reports; a store it cannot read must not keep the connector from starting. */
+    @Test
+    void anUnreadableStoreIsReportedWithoutStoppingStartup() {
+        when(repository.findAll()).thenThrow(new DataAccessResourceFailureException("connection reset"));
+        ContentTemplatePreflight preflight = new ContentTemplatePreflight(repository);
+
+        Assertions.assertDoesNotThrow(preflight::reportUnrenderableTemplates);
+
+        Assertions.assertEquals(1, logAppender.list.size(), logAppender.list.toString());
+        Assertions.assertEquals(Level.WARN, logAppender.list.getFirst().getLevel());
+        Assertions
+                .assertEquals("Stored content templates could not be checked: DataAccessResourceFailureException",
+                        logAppender.list.getFirst().getFormattedMessage());
     }
 }

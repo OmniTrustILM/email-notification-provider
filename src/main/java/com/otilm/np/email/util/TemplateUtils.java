@@ -12,6 +12,7 @@ import freemarker.core.HTMLOutputFormat;
 import freemarker.core.OutputFormat;
 import freemarker.core.ParseException;
 import freemarker.core.PlainTextOutputFormat;
+import freemarker.core.TemplateClassResolver;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -34,6 +35,9 @@ public class TemplateUtils {
      */
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final String LEGACY_ESCAPE = "html";
+
+    /** Names the content template in every message about it, so saving, startup and send read alike. */
+    public static final String CONTENT_TEMPLATE_LABEL = "email content";
 
     private TemplateUtils() {
     }
@@ -144,15 +148,16 @@ public class TemplateUtils {
     }
 
     /**
-     * Why this content template will not render, for a caller checking one that is already stored: the message the
-     * operator would be given when a notification reaches it, or empty when it renders.
+     * Why this content template will not parse, for a caller checking one before any notification reaches it: the
+     * message the operator would be given at send, or empty when it parses. Only parsing can be checked here, since
+     * whether a reference resolves depends on the event that is rendered.
      */
     public static Optional<String> contentTemplateFailure(String templateSource) {
         try {
-            parse("email content", templateSource, configuration(HTMLOutputFormat.INSTANCE));
+            parse(CONTENT_TEMPLATE_LABEL, templateSource, configuration(HTMLOutputFormat.INSTANCE));
             return Optional.empty();
         } catch (IOException e) {
-            return Optional.of(parseFailureDescription("email content", e));
+            return Optional.of(parseFailureDescription(CONTENT_TEMPLATE_LABEL, e));
         }
     }
 
@@ -163,6 +168,8 @@ public class TemplateUtils {
         cfg.setLogTemplateExceptions(false);
         cfg.setWrapUncheckedExceptions(true);
         cfg.setOutputFormat(outputFormat);
+        // A template renders the notification and has no use for creating Java objects
+        cfg.setNewBuiltinClassResolver(TemplateClassResolver.ALLOWS_NOTHING_RESOLVER);
         // A parse failure's column is read as an offset into the source, so a tab must count as the one character it
         // is rather than as a jump to the next tab stop
         cfg.setTabSize(1);

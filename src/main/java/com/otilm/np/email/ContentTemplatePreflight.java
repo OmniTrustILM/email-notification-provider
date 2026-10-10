@@ -30,7 +30,15 @@ public class ContentTemplatePreflight {
 
     @EventListener(ApplicationReadyEvent.class)
     public void reportUnrenderableTemplates() {
-        for (String instanceAndReason : unrenderableTemplates()) {
+        List<String> unrenderable;
+        try {
+            unrenderable = unrenderableTemplates();
+        } catch (RuntimeException e) {
+            // The check only reports, so a store it cannot read must not keep the connector from starting
+            LOGGER.warn("Stored content templates could not be checked: {}", e.getClass().getSimpleName());
+            return;
+        }
+        for (String instanceAndReason : unrenderable) {
             LOGGER.warn("Notification instance {}", instanceAndReason);
         }
     }
