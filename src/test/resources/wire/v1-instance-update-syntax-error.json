@@ -1,5 +1,5 @@
 {
   "status" : 422,
   "contentType" : "application/json",
-  "body" : [ "The email content template cannot be rendered: Syntax error in template \"email content\" in line 1, column 17:\nEncountered \"/\", but was expecting one of these patterns:\n    <STRING_LITERAL>\n    <RAW_STRING>\n    \"false\"\n    \"true\"\n    <INTEGER>\n    <DECIMAL>\n    <HEX_INTEGER>\n    \".\"\n    \"+\"\n    \"-\"\n    \"!\"\n    \"[\"\n    \"(\"\n    \"{\"\n    <ID>" ]
+  "body" : [ "The email content template cannot be rendered: Syntax error in template \"email content\" in line 1, column 17: <parser message>" ]
 }

@@ -63,7 +63,7 @@ public class ApiErrorResponseDto {
         return status;
     }
 
-    /** The status by name, as core has always read it; Jackson 3 would write the enum's text, which adds the code. */
+    /** The status by name, as v1 has always written it; Jackson 3 would write the enum's text, which adds the code. */
     @JsonProperty("status")
     public String getStatusName() {
         return status == null ? null : status.name();

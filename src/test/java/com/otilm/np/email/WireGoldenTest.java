@@ -53,10 +53,16 @@ class WireGoldenTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Pattern UUID_PATTERN = Pattern
             .compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
-    private static final Pattern EPOCH_MILLIS = Pattern.compile("\"timestamp\":\\d+");
+    private static final Pattern EPOCH_MILLIS = Pattern.compile("\"timestamp\":[1-9]\\d*");
     /** The parser's own account of a body it could not read, which each parser words differently. */
     private static final Pattern PARSER_MESSAGE = Pattern
             .compile("\"(detail|error)\":\"(?:[^\"\\\\]|\\\\.)*Source: REDACTED(?:[^\"\\\\]|\\\\.)*\"");
+    /**
+     * FreeMarker's account of where a template broke, which names its token patterns and joins lines with the
+     * platform's separator.
+     */
+    private static final Pattern TEMPLATE_PARSE_MESSAGE = Pattern
+            .compile("(line \\d+, column \\d+:)(?:[^\"\\\\]|\\\\.)*\"");
     /** Lists the connector builds from hash maps, so their order differs from run to run. */
     private static final Set<String> UNORDERED = Set.of("endPoints");
     private static final String INSTANCES = "/v1/notificationProvider/notifications";
@@ -297,6 +303,7 @@ class WireGoldenTest {
     private String normalized(String body) {
         String masked = EPOCH_MILLIS.matcher(body).replaceAll("\"timestamp\":\"<millis>\"");
         masked = PARSER_MESSAGE.matcher(masked).replaceAll("\"$1\":\"<parser message>\"");
+        masked = TEMPLATE_PARSE_MESSAGE.matcher(masked).replaceAll("$1 <parser message>\"");
         return UUID_PATTERN
                 .matcher(masked)
                 .replaceAll(match -> stableUuids.contains(match.group()) ? match.group() : "<uuid>");

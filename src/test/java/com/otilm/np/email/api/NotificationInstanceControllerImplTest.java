@@ -54,7 +54,7 @@ class NotificationInstanceControllerImplTest {
                 .perform(post("/v1/notificationProvider/notifications/{uuid}/notify", uuid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(NOTIFY_REQUEST))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$[0]").value(TEMPLATE_FAILURE));
     }
 
@@ -84,7 +84,7 @@ class NotificationInstanceControllerImplTest {
                 .perform(post("/v1/notificationProvider/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(INSTANCE_REQUEST))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$[0]").value(TEMPLATE_FAILURE));
     }
 }
