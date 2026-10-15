@@ -1,0 +1,63 @@
+{
+  "status" : 200,
+  "contentType" : "application/json",
+  "body" : [ {
+    "endPoints" : [ {
+      "context" : "/v1/notificationProvider/notifications",
+      "method" : "GET",
+      "name" : "listNotificationInstances",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/notifications",
+      "method" : "POST",
+      "name" : "createNotificationInstance",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/notifications/{uuid}",
+      "method" : "DELETE",
+      "name" : "removeNotificationInstance",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/notifications/{uuid}",
+      "method" : "GET",
+      "name" : "getNotificationInstance",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/notifications/{uuid}",
+      "method" : "PUT",
+      "name" : "updateNotificationInstance",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/notifications/{uuid}/notify",
+      "method" : "POST",
+      "name" : "sendNotification",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/{kind}/attributes",
+      "method" : "GET",
+      "name" : "listAttributeDefinitions",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/{kind}/attributes/mapping",
+      "method" : "GET",
+      "name" : "listMappingAttributes",
+      "required" : false,
+      "uuid" : null
+    }, {
+      "context" : "/v1/notificationProvider/{kind}/attributes/validate",
+      "method" : "POST",
+      "name" : "validateAttributes",
+      "required" : false,
+      "uuid" : null
+    } ],
+    "functionGroupCode" : "notificationProvider",
+    "kinds" : [ "EMAIL" ]
+  } ]
+}

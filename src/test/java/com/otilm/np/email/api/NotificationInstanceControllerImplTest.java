@@ -8,7 +8,7 @@ import com.otilm.np.email.service.NotificationInstanceService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -54,7 +54,7 @@ class NotificationInstanceControllerImplTest {
                 .perform(post("/v1/notificationProvider/notifications/{uuid}/notify", uuid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(NOTIFY_REQUEST))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$[0]").value(TEMPLATE_FAILURE));
     }
 
@@ -84,7 +84,7 @@ class NotificationInstanceControllerImplTest {
                 .perform(post("/v1/notificationProvider/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(INSTANCE_REQUEST))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$[0]").value(TEMPLATE_FAILURE));
     }
 }

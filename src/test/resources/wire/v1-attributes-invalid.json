@@ -1,0 +1,5 @@
+{
+  "status" : 422,
+  "contentType" : "application/json",
+  "body" : [ "Required attribute Sender email address not found.", "Required attribute Email content template not found." ]
+}

@@ -1,0 +1,15 @@
+{
+  "status" : 400,
+  "contentType" : "application/json",
+  "body" : {
+    "code" : 81,
+    "errors" : [ {
+      "detail" : "JSON parse error: Cannot construct instance of `com.otilm.api.model.core.auth.Resource`, problem: Unknown Resource Name noSuchResource",
+      "error" : "Unknown Resource Name noSuchResource",
+      "type" : "HttpMessageNotReadableException"
+    } ],
+    "message" : "Arguments not valid",
+    "status" : "BAD_REQUEST",
+    "timestamp" : "<millis>"
+  }
+}

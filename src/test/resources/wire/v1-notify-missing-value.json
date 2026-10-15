@@ -1,0 +1,5 @@
+{
+  "status" : 422,
+  "contentType" : "application/json",
+  "body" : [ "The email content template cannot be rendered: InvalidReferenceException at line 1, column 19" ]
+}

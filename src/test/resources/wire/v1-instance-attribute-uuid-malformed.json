@@ -1,0 +1,15 @@
+{
+  "status" : 400,
+  "contentType" : "application/json",
+  "body" : {
+    "code" : 81,
+    "errors" : [ {
+      "detail" : "not-a-uuid",
+      "error" : "attributes",
+      "type" : "InvalidFormatException"
+    } ],
+    "message" : "Arguments not valid",
+    "status" : "BAD_REQUEST",
+    "timestamp" : "<millis>"
+  }
+}
